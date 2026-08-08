@@ -40,16 +40,23 @@ Consultar saldo diário
 | UC-01 | `RegisterTransaction` | Cash Flow | Obrigatório | RF-001, RF-002 |
 | UC-02 | `GetDailyBalance` | Consolidation | Obrigatório | RF-005, RF-006 |
 | UC-03 | `ListTransactions` | Cash Flow | MVP (apoio) | RF-003 |
+| UC-06 | `GetTransaction` | Cash Flow | MVP (apoio) | RF-003 |
 | UC-04 | `ConsolidateTransaction` (worker) | Consolidation | Obrigatório | RF-004, RNF-008 |
 | UC-05 | `PublishPendingOutboxMessages` (worker) | Cash Flow | Obrigatório | RNF-007 |
 
 UC-04 e UC-05 não são disparados por usuário, mas são casos de uso de aplicação
 com regra própria e testes próprios.
 
+UC-06 entrou na etapa 4, ao definir o contrato: `POST /transactions` responde
+`201` com header `Location`, e um `Location` sem recurso de destino seria um
+contrato quebrado. É o menor endpoint do sistema — uma busca por chave primária —
+e o repositório já precisa da operação.
+
 ## 3. Dentro do escopo
 
 - Registro de lançamento (crédito / débito) com validação de domínio
-- Listagem simples de lançamentos, com paginação e filtro por período
+- Listagem de lançamentos com paginação por cursor e filtro por período
+  ([ADR-014](./decisions/ADR-014-cursor-pagination.md)), e consulta individual por id
 - Publicação confiável de eventos via Transactional Outbox
 - Consumo assíncrono e consolidação diária idempotente
 - Consulta de saldo consolidado por data

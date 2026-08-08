@@ -24,6 +24,7 @@ com um documento, e não com "foi assim que decidimos".
 | [ADR-011](./ADR-011-observability.md) | Observabilidade: logs, correlação e health checks | Aceito | RNF-011, RNF-013 |
 | [ADR-012](./ADR-012-tech-stack.md) | Stack técnica: .NET 10 e ASP.NET Core | Aceito | RT-001 |
 | [ADR-013](./ADR-013-money-representation.md) | Representação de valores monetários e tipo de lançamento | Aceito | RN-001..004 |
+| [ADR-014](./ADR-014-cursor-pagination.md) | Paginação por cursor (keyset) na listagem de lançamentos | Aceito | RF-003 |
 
 Template para novas decisões: [ADR-000](./ADR-000-template.md).
 
@@ -47,6 +48,8 @@ graph TD
     A1["ADR-001<br/>Clean Architecture"] --> A8["ADR-008<br/>TDD"]
     A8 --> A1
     A12["ADR-012<br/>stack .NET"] --> A13["ADR-013<br/>Money e TransactionType"]
+    RF003["RF-003<br/>consultar lançamentos"] --> A14["ADR-014<br/>paginação por cursor"]
+    A5 --> A14
 ```
 
 Leitura do grafo: **tudo à direita de RNF-001 existe por causa dele**. Removido o
@@ -57,10 +60,12 @@ monolito modular. Isso é intencional: nenhuma peça está no projeto por si mes
 ADR-001 e ADR-008 se reforçam mutuamente (Clean Architecture viabiliza o TDD; o
 TDD pressiona por fronteiras limpas). ADR-012 e ADR-013 são consequência da
 restrição de linguagem e da natureza financeira do domínio, independentes do resto.
+ADR-014 é a única decisão originada de um requisito **funcional**, e não de
+RNF-001: ela existe porque RF-003 precisa ser consultável em volume.
 
 ## Quando criar uma nova ADR
 
-As 13 ADRs acima cobrem o desenho do sistema. Daqui para frente o conjunto é
+As ADRs acima cobrem o desenho do sistema. Daqui para frente o conjunto é
 tratado como **fechado por padrão**: documentação que cresce mais rápido que o
 sistema deixa de ser justificativa e passa a ser ruído.
 

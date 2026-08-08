@@ -249,7 +249,9 @@ duplicada. Ver [ADR-007](./decisions/ADR-007-idempotency.md).
 {
   "eventId": "0d9f1f4c-2f4e-4c1a-9a4e-6b1c0c2f0f11",
   "eventType": "TransactionRegistered",
+  "eventVersion": 1,
   "occurredAt": "2026-08-08T14:32:11Z",
+  "correlationId": "b1f2c3d4-5e6f-4a7b-8c9d-0e1f2a3b4c5d",
   "data": {
     "transactionId": "6c6a2f4e-1b2c-4d3e-8f90-1a2b3c4d5e6f",
     "type": "CREDIT",
@@ -261,7 +263,13 @@ duplicada. Ver [ADR-007](./decisions/ADR-007-idempotency.md).
 
 `eventId` é o que garante a idempotência no consumidor. `data.occurredAt` é o que
 determina o dia da consolidação — deliberadamente distinto de `occurredAt` do
-envelope, que é o instante da emissão.
+envelope, que é o instante da emissão. `correlationId` liga o evento à requisição
+HTTP que o originou ([ADR-011](./decisions/ADR-011-observability.md)), e
+`eventVersion` existe para que uma mudança incompatível de schema seja uma decisão
+explícita, e não uma quebra silenciosa.
+
+Campo a campo, propriedades AMQP e política de evolução do schema:
+[`api-contracts.md`](./api-contracts.md) §5.
 
 ## 11. Trade-offs assumidos
 

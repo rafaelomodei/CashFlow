@@ -11,7 +11,8 @@ débito e relatório de saldo diário consolidado.
 | [`requirements.md`](./requirements.md) | O que o sistema precisa fazer e por quê — RF, RNF, restrições, premissas e rastreabilidade |
 | [`scope.md`](./scope.md) | O que está e o que **não** está no MVP, com justificativa |
 | [`architecture.md`](./architecture.md) | Como o sistema é estruturado — diagramas, fluxos, comportamento sob falha |
-| [`decisions/`](./decisions/README.md) | Por que cada escolha foi feita — 13 ADRs com alternativas e trade-offs |
+| [`api-contracts.md`](./api-contracts.md) | Qual é o contrato exato — endpoints, DTOs, erros e o schema do evento |
+| [`decisions/`](./decisions/README.md) | Por que cada escolha foi feita — 14 ADRs com alternativas e trade-offs |
 | [`testing-strategy.md`](./testing-strategy.md) | Como a corretude é garantida — TDD, níveis e plano de testes |
 | [`roadmap.md`](./roadmap.md) | Em que ordem o projeto é construído e por que nesta ordem |
 | [`progress.md`](./progress.md) | Onde a execução está agora — checklist detalhado e próximo item |
@@ -25,6 +26,9 @@ débito e relatório de saldo diário consolidado.
 
 **Para avaliar as decisões técnicas:**
 [`architecture.md`](./architecture.md) → [`decisions/README.md`](./decisions/README.md)
+
+**Para integrar com as APIs ou consumir o evento:**
+[`api-contracts.md`](./api-contracts.md)
 
 **Para entender o recorte do problema:**
 [`requirements.md`](./requirements.md) → [`scope.md`](./scope.md)
@@ -52,7 +56,7 @@ escrito ainda, por decisão registrada em [`roadmap.md`](./roadmap.md).
 | 1 — Entendimento do desafio | ✅ Concluída |
 | 2 — Mapeamento de requisitos | ✅ Concluída |
 | 3 — Decisões arquiteturais | ✅ Concluída |
-| 4 — Contratos de API e eventos | 🚧 Em andamento |
+| 4 — Contratos de API e eventos | ✅ Concluída |
 | 5 a 14 — Implementação | ⬜ Pendente |
 
 Acompanhamento item a item: [`progress.md`](./progress.md).
