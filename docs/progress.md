@@ -307,33 +307,66 @@ Legenda: `[x]` concluída · `[~]` em andamento · `[ ]` pendente
 
 ---
 
-## Etapa 6 — Domínio (TDD)
+## Etapa 6 — Domínio (TDD) 🚧
+
+> Cada contexto tem o seu próprio `Domain`: `Money` e `TransactionType` existem
+> nos dois, sem compartilhamento. `Shared.Contracts` carrega contrato de evento,
+> nunca tipo de domínio ([ADR-002](./decisions/ADR-002-service-decomposition.md)).
+> Duplicação de dois tipos pequenos é o preço da fronteira — um kernel comum
+> acoplaria os serviços justamente onde a decomposição existe para separá-los.
 
 ### `Money`
 
-- [ ] RED: valor negativo é inválido (RN-001)
-- [ ] RED: valor zero é inválido (RN-001)
-- [ ] RED: precisão de duas casas decimais (ADR-013)
-- [ ] RED: igualdade por valor
-- [ ] GREEN + REFACTOR
+- [x] RED: valor negativo é inválido (RN-001)
+- [x] RED: valor zero é inválido (RN-001)
+- [x] RED: precisão de duas casas decimais (ADR-013)
+- [x] RED: igualdade por valor
+- [x] GREEN + REFACTOR
+
+> Divergência resolvida nesta etapa: `api-contracts.md` §1.4 promete `400` para
+> mais de duas casas decimais, enquanto a ADR-013 dizia "normalizado". Vale o
+> contrato — mais de duas casas é exceção de domínio, e "normalizar" passa a
+> significar apenas elevar a escala (`10.5` → `10.50`). Registrado como nota de
+> esclarecimento na [ADR-013](./decisions/ADR-013-money-representation.md);
+> regra de validação não vira ADR nova, por
+> [`decisions/README.md`](./decisions/README.md).
+>
+> `Money` também recusa valor acima de `9999999999999999.99`: sem isso, o
+> estouro da faixa de `numeric(18,2)` só apareceria na gravação, como erro de
+> banco em vez de violação de regra.
+>
+> A soma de `Money` não foi implementada — nada no contexto de lançamentos soma
+> dinheiro. Ela nasce onde o somador existe, no `DailyBalance` da consolidação.
 
 ### `TransactionType`
 
-- [ ] RED: aceita apenas `CREDIT` e `DEBIT` (RN-002)
-- [ ] RED: valor inválido é rejeitado
-- [ ] RED: o sinal deriva do tipo, nunca do valor (RN-003)
-- [ ] GREEN + REFACTOR
+- [x] RED: aceita apenas `CREDIT` e `DEBIT` (RN-002)
+- [x] RED: valor inválido é rejeitado
+- [x] RED: o sinal deriva do tipo, nunca do valor (RN-003)
+- [x] GREEN + REFACTOR
+
+> `Parse` é sensível a maiúsculas: aceitar `credit` faria o sistema receber uma
+> grafia e devolver outra na resposta e no evento.
 
 ### `Transaction`
 
-- [ ] RED: criação válida
-- [ ] RED: `Amount` obrigatório e positivo
-- [ ] RED: `Type` obrigatório e válido
-- [ ] RED: `OccurredAt` obrigatório
+- [x] RED: criação válida
+- [x] RED: `Amount` obrigatório e positivo
+- [x] RED: `Type` obrigatório e válido
+- [x] RED: `OccurredAt` obrigatório
 - [ ] RED: `OccurredAt` determina o dia da consolidação (RN-004)
-- [ ] RED: `Description` opcional
-- [ ] RED: imutabilidade após a criação (premissa P-05)
-- [ ] GREEN + REFACTOR
+- [x] RED: `Description` opcional
+- [x] RED: imutabilidade após a criação (premissa P-05)
+- [x] GREEN + REFACTOR
+
+> RN-004 fica em aberto de propósito: o lançamento normaliza `OccurredAt` para
+> UTC — e há teste de que 22h em Brasília cai no dia seguinte —, mas quem deriva
+> o **dia** é o `DailyBalance`, no contexto de consolidação. O item fecha lá, com
+> o código que de fato faz a derivação.
+>
+> A janela de retroatividade (premissa P-09) não está no domínio: seus limites
+> são configuráveis, e configuração não pertence a uma entidade. Ela é validação
+> de entrada, na etapa 11.
 
 ### `DailyBalance`
 
@@ -348,6 +381,11 @@ Legenda: `[x]` concluída · `[~]` em andamento · `[ ]` pendente
 
 - [ ] Definir hierarquia de exceções de domínio
 - [ ] Testar mensagem e tipo de cada violação de regra
+
+> Raiz `DomainException` criada no contexto de lançamentos, com uma exceção por
+> regra violada (valor, tipo, data, descrição) e mensagem verificada em teste. Os
+> itens fecham quando a consolidação tiver a sua — a hierarquia é por contexto,
+> como o resto do domínio.
 
 ### Definition of Done da etapa
 

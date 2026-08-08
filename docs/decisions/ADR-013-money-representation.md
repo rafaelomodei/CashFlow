@@ -26,6 +26,7 @@ parte do risco de defeito silencioso:
 - Encapsulado em um Value Object **imutável** `Money`:
   - impede valor negativo na criação (RN-001);
   - normaliza a escala para 2 casas;
+  - rejeita mais de 2 casas decimais — ver a nota de esclarecimento abaixo;
   - concentra as operações de soma e subtração;
   - compara por valor, não por referência.
 
@@ -53,9 +54,36 @@ eventos já publicados.
 ### Arredondamento
 
 Nenhum cálculo do MVP produz fração indivisível — o saldo é soma e subtração de
-valores já com 2 casas, e não há juros, rateio ou percentual. A política de
-arredondamento (`MidpointRounding.ToEven`) fica declarada em `Money` para o caso de
-uma operação futura exigi-la, mas não é exercitada no escopo atual.
+valores já com 2 casas, e não há juros, rateio ou percentual. Nenhuma política de
+arredondamento é exercitada no escopo atual, e por isso nenhuma é declarada: a
+única operação de escala que existe em `Money` é a normalização descrita abaixo.
+
+### Nota de esclarecimento — 2026-08-08 (etapa 6)
+
+"Normalizar a escala" acima significa **escala**, não arredondamento. O texto
+original era ambíguo o bastante para admitir a leitura de que `10.555` viraria
+`10.56`, e essa leitura contradiz
+[`api-contracts.md`](../api-contracts.md) §1.4, que promete `400` para mais de duas
+casas e afirma explicitamente "não arredondamento silencioso".
+
+A leitura em vigor, implementada em `Money`:
+
+| Entrada | Resultado |
+|---------|-----------|
+| `10.555` | Exceção de domínio — mais de 2 casas decimais |
+| `10.5` | `10.50` — escala elevada, valor inalterado |
+| `10.500` | `10.50` — zeros à direita não são casas significativas |
+| `0` ou negativo | Exceção de domínio (RN-001) |
+| acima de `9999999999999999.99` | Exceção de domínio — faixa de `numeric(18,2)` (ADR-005) |
+
+Não é ADR nova porque não é decisão estrutural: é regra de validação, que
+[`decisions/README.md`](./README.md) classifica explicitamente como nota na
+documentação existente. A decisão de fundo — `decimal` em Value Object imutável —
+permanece intacta.
+
+A rejeição vive no domínio, e não apenas na borda HTTP: o `400` da API passa a ser
+eco de uma regra única, em vez de uma segunda validação livre para divergir da
+primeira.
 
 ### Data do lançamento
 
@@ -110,7 +138,8 @@ RN-001, RN-002, RN-003, RN-004, RF-001, RF-002, RNF-010
 ## Como validar
 
 - Teste unitário: criar `Money` negativo lança exceção de domínio.
-- Teste unitário: `Money` com mais de 2 casas é normalizado.
+- Teste unitário: `Money` com mais de 2 casas lança exceção de domínio.
+- Teste unitário: `Money` com menos de 2 casas tem a escala normalizada.
 - Teste unitário: `DEBIT.ApplyTo(100)` retorna `−100`.
 - Teste de propriedade: somar e subtrair valores com centavos não acumula erro.
 - Teste de serialização: o evento publicado contém `"type": "CREDIT"`, não `0`.
