@@ -193,87 +193,110 @@ Legenda: `[x]` concluída · `[~]` em andamento · `[ ]` pendente
 
 ### Solution e convenções
 
-- [ ] Criar `CashFlow.sln`
-- [ ] Criar `global.json` fixando .NET 10
-- [ ] Criar `Directory.Build.props`
-- [ ] Configurar `TreatWarningsAsErrors`
-- [ ] Configurar `Nullable` e `ImplicitUsings`
-- [ ] Criar `.editorconfig`
-- [ ] Atualizar `.gitignore` para artefatos .NET
+- [x] Criar `CashFlow.sln`
+- [x] Criar `global.json` fixando .NET 10
+- [x] Criar `Directory.Build.props`
+- [x] Configurar `TreatWarningsAsErrors`
+- [x] Configurar `Nullable` e `ImplicitUsings`
+- [x] Criar `.editorconfig`
+- [x] Atualizar `.gitignore` para artefatos .NET
 
 ### Projetos — Cash Flow
 
-- [ ] `src/CashFlow.Domain`
-- [ ] `src/CashFlow.Application`
-- [ ] `src/CashFlow.Infrastructure`
-- [ ] `src/CashFlow.Api`
+- [x] `src/CashFlow.Domain`
+- [x] `src/CashFlow.Application`
+- [x] `src/CashFlow.Infrastructure`
+- [x] `src/CashFlow.Api`
 
 ### Projetos — Consolidation
 
-- [ ] `src/Consolidation.Domain`
-- [ ] `src/Consolidation.Application`
-- [ ] `src/Consolidation.Infrastructure`
-- [ ] `src/Consolidation.Api`
-- [ ] `src/Consolidation.Worker`
+- [x] `src/Consolidation.Domain`
+- [x] `src/Consolidation.Application`
+- [x] `src/Consolidation.Infrastructure`
+- [x] `src/Consolidation.Api`
+- [x] `src/Consolidation.Worker`
 
 ### Projetos — Shared
 
-- [ ] `src/Shared.Contracts` (somente contratos de evento — sem regra de negócio)
+- [x] `src/Shared.Contracts` (somente contratos de evento — sem regra de negócio)
 
 ### Projetos de teste
 
-- [ ] `tests/CashFlow.Domain.UnitTests`
-- [ ] `tests/CashFlow.Application.UnitTests`
-- [ ] `tests/Consolidation.Domain.UnitTests`
-- [ ] `tests/Consolidation.Application.UnitTests`
-- [ ] `tests/CashFlow.IntegrationTests`
-- [ ] `tests/Consolidation.IntegrationTests`
-- [ ] `tests/ArchitectureTests`
-- [ ] Configurar xUnit, FluentAssertions e NSubstitute (ADR-008)
-- [ ] Configurar categorias/traits separando unitários de integração
+- [x] `tests/CashFlow.Domain.UnitTests`
+- [x] `tests/CashFlow.Application.UnitTests`
+- [x] `tests/Consolidation.Domain.UnitTests`
+- [x] `tests/Consolidation.Application.UnitTests`
+- [x] `tests/CashFlow.IntegrationTests`
+- [x] `tests/Consolidation.IntegrationTests`
+- [x] `tests/ArchitectureTests`
+- [x] Configurar xUnit, FluentAssertions e NSubstitute (ADR-008)
+- [x] Configurar categorias/traits separando unitários de integração
+
+> Testcontainers entra na etapa 8, junto do primeiro teste que precisa de banco
+> real — instalá-lo aqui seria dependência sem teste que a exija.
 
 ### Fronteiras arquiteturais
 
-- [ ] Configurar as referências permitidas entre projetos
-- [ ] Escrever o primeiro Architecture Test
-- [ ] Teste: `CashFlow.Domain` não referencia `Infrastructure`
-- [ ] Teste: `CashFlow.Application` não referencia `Infrastructure`
-- [ ] Teste: `Consolidation.Domain` não referencia `Infrastructure`
-- [ ] Teste: `Consolidation.Application` não referencia `Infrastructure`
-- [ ] Teste: nenhum contexto referencia o outro além de `Shared.Contracts`
+- [x] Configurar as referências permitidas entre projetos
+- [x] Escrever o primeiro Architecture Test
+- [x] Teste: `CashFlow.Domain` não referencia `Infrastructure`
+- [x] Teste: `CashFlow.Application` não referencia `Infrastructure`
+- [x] Teste: `Consolidation.Domain` não referencia `Infrastructure`
+- [x] Teste: `Consolidation.Application` não referencia `Infrastructure`
+- [x] Teste: nenhum contexto referencia o outro além de `Shared.Contracts`
+
+> As regras são verificadas sobre os `.csproj`, e não sobre o manifesto do
+> assembly compilado: o compilador omite do manifesto as referências que nenhum
+> tipo usa, e uma referência proibida em projeto ainda vazio passaria
+> despercebida justamente enquanto é mais barata de corrigir. Cada regra foi
+> validada introduzindo a violação correspondente e observando o teste reprovar.
 
 ### Ambiente Docker
 
-- [ ] `docker-compose.yml`
-- [ ] PostgreSQL `cashflow_db`
-- [ ] PostgreSQL `consolidation_db`
-- [ ] RabbitMQ com management plugin
-- [ ] Health checks dos serviços de infraestrutura
-- [ ] Volumes nomeados para persistência
-- [ ] `.env.example`
-- [ ] `Dockerfile` da Cash Flow API
-- [ ] `Dockerfile` da Consolidation API
-- [ ] `Dockerfile` do Consolidation Worker
-- [ ] Validar consumo de recursos do ambiente completo (risco registrado no roadmap)
+- [x] `docker-compose.yml`
+- [x] PostgreSQL `cashflow_db`
+- [x] PostgreSQL `consolidation_db`
+- [x] RabbitMQ com management plugin
+- [x] Health checks dos serviços de infraestrutura
+- [x] Volumes nomeados para persistência
+- [x] `.env.example`
+- [x] `Dockerfile` da Cash Flow API
+- [x] `Dockerfile` da Consolidation API
+- [x] `Dockerfile` do Consolidation Worker
+- [x] Validar consumo de recursos do ambiente completo (risco registrado no roadmap)
+
+> Medição do ambiente completo ocioso: ~240 MiB somando os seis containers
+> (RabbitMQ 92 MiB, os dois PostgreSQL 24 MiB cada, os três serviços .NET entre
+> 24 e 41 MiB). O risco de recursos do roadmap não se confirmou.
+>
+> Verificado também o ponto que a [ADR-009](./decisions/ADR-009-containers.md)
+> trata como decisivo: com o `rabbitmq` parado, a `cashflow-api` sobe e responde
+> normalmente. Nesta etapa isso valida a **configuração do ambiente**; o
+> comportamento da aplicação sem broker só fica demonstrável na etapa 9, quando
+> existir código de publicação.
 
 ### Integração contínua
 
-- [ ] Criar `.github/workflows/ci.yml`
-- [ ] Passo `restore`
-- [ ] Passo `build`
-- [ ] Passo testes unitários
-- [ ] Passo testes de arquitetura
-- [ ] Passo testes de integração
+- [x] Criar `.github/workflows/ci.yml`
+- [x] Passo `restore`
+- [x] Passo `build`
+- [x] Passo testes unitários
+- [x] Passo testes de arquitetura
+- [x] Passo testes de integração
 - [ ] Executar o pipeline em um Pull Request de teste
 - [ ] Proteger a `master` exigindo CI verde
 
+> O gate rápido roda um passo extra para os testes **sem categoria**: um teste
+> que esqueça o `[Trait]` não cairia em nenhum filtro e seria ignorado sem
+> ninguém perceber. Lacuna silenciosa é pior que teste vermelho.
+
 ### Definition of Done da etapa
 
-- [ ] `dotnet build` verde
-- [ ] `dotnet test` verde
-- [ ] `docker compose up -d` sobe todo o ambiente
+- [x] `dotnet build` verde
+- [x] `dotnet test` verde
+- [x] `docker compose up -d` sobe todo o ambiente
 - [ ] CI verde em Pull Request
-- [ ] Estrutura idêntica à prevista em [`architecture.md`](./architecture.md) §8
+- [x] Estrutura idêntica à prevista em [`architecture.md`](./architecture.md) §8
 
 ---
 

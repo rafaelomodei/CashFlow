@@ -108,24 +108,47 @@ graph TD
 
 ```
 docs/                  documentação, ADRs e enunciado
-.github/workflows/     pipeline de CI (⏳ etapa 5)
-src/                   código-fonte (⏳ etapa 5)
-tests/                 testes automatizados (⏳ etapa 5)
+.github/workflows/     pipeline de CI
+src/                   código-fonte
+tests/                 testes automatizados
 k6/                    testes de carga (⏳ etapa 13)
-docker-compose.yml     ambiente local (⏳ etapa 5)
+docker-compose.yml     ambiente local
 ```
 
-Estrutura de projetos planejada: [`docs/architecture.md`](./docs/architecture.md) §8.
+Estrutura de projetos: [`docs/architecture.md`](./docs/architecture.md) §8.
 
 ## Como executar
 
-⏳ *Etapa 5 do [roadmap](./docs/roadmap.md).*
-
-O objetivo definido em [ADR-009](./docs/decisions/ADR-009-containers.md) é que a
-execução completa seja:
+**Pré-requisitos:** Docker e Docker Compose. O SDK do .NET 10 é necessário apenas
+para rodar os testes fora do container.
 
 ```bash
+cp .env.example .env
 docker compose up -d
+```
+
+| Serviço | Endereço |
+|---------|----------|
+| Cash Flow API | http://localhost:5001 |
+| Consolidation API | http://localhost:5002 |
+| RabbitMQ (management) | http://localhost:15672 |
+| `cashflow_db` | `localhost:5432` |
+| `consolidation_db` | `localhost:5433` |
+
+Para reiniciar do zero: `docker compose down -v && docker compose up -d`.
+
+O ambiente completo ocioso consome cerca de 240 MiB somando os seis containers.
+
+⏳ *Os endpoints entram na etapa 11 do [roadmap](./docs/roadmap.md); hoje os
+serviços sobem e expõem apenas a especificação OpenAPI.*
+
+### Testes
+
+```bash
+dotnet test                                   # suíte completa
+dotnet test --filter Category=Unit            # unitários, sem Docker
+dotnet test --filter Category=Architecture    # fronteiras de camada
+dotnet test --filter Category=Integration     # exige Docker
 ```
 
 ## API
