@@ -1,0 +1,29 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup>
+    <PackageReference Include="coverlet.collector" Version="6.0.4" />
+    <PackageReference Include="FluentAssertions" Version="7.2.2" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.14.1" />
+    <PackageReference Include="NetArchTest.Rules" Version="1.3.2" />
+    <PackageReference Include="xunit" Version="2.9.3" />
+    <PackageReference Include="xunit.runner.visualstudio" Version="3.1.4" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Using Include="Xunit" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\CashFlow.Domain\CashFlow.Domain.csproj" />
+    <ProjectReference Include="..\..\src\CashFlow.Application\CashFlow.Application.csproj" />
+    <ProjectReference Include="..\..\src\CashFlow.Infrastructure\CashFlow.Infrastructure.csproj" />
+    <ProjectReference Include="..\..\src\CashFlow.Api\CashFlow.Api.csproj" />
+    <ProjectReference Include="..\..\src\Consolidation.Domain\Consolidation.Domain.csproj" />
+    <ProjectReference Include="..\..\src\Consolidation.Application\Consolidation.Application.csproj" />
+    <ProjectReference Include="..\..\src\Consolidation.Infrastructure\Consolidation.Infrastructure.csproj" />
+    <ProjectReference Include="..\..\src\Consolidation.Api\Consolidation.Api.csproj" />
+    <ProjectReference Include="..\..\src\Consolidation.Worker\Consolidation.Worker.csproj" />
+    <ProjectReference Include="..\..\src\Shared.Contracts\Shared.Contracts.csproj" />
+  </ItemGroup>
+
+</Project>

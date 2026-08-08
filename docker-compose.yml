@@ -1,0 +1,131 @@
+# Ambiente local completo — ADR-009.
+#
+# Regra que não pode ser quebrada aqui: nenhum serviço declara `depends_on` no
+# `rabbitmq`. Tornar o broker pré-condição de startup contradiria o Outbox
+# (ADR-004) e RNF-001 — a Cash Flow API precisa subir, ficar pronta e responder
+# `201` em `POST /transactions` com o broker fora do ar. A conexão com o broker é
+# responsabilidade do publisher e do consumidor, via retry em segundo plano.
+
+name: cashflow
+
+services:
+  cashflow-db:
+    image: postgres:16-alpine
+    container_name: cashflow-db
+    environment:
+      POSTGRES_DB: ${CASHFLOW_DB_NAME}
+      POSTGRES_USER: ${CASHFLOW_DB_USER}
+      POSTGRES_PASSWORD: ${CASHFLOW_DB_PASSWORD}
+    ports:
+      - "${CASHFLOW_DB_PORT}:5432"
+    volumes:
+      - cashflow-db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${CASHFLOW_DB_USER} -d ${CASHFLOW_DB_NAME}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+    networks: [cashflow-net]
+
+  consolidation-db:
+    image: postgres:16-alpine
+    container_name: consolidation-db
+    environment:
+      POSTGRES_DB: ${CONSOLIDATION_DB_NAME}
+      POSTGRES_USER: ${CONSOLIDATION_DB_USER}
+      POSTGRES_PASSWORD: ${CONSOLIDATION_DB_PASSWORD}
+    ports:
+      - "${CONSOLIDATION_DB_PORT}:5432"
+    volumes:
+      - consolidation-db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${CONSOLIDATION_DB_USER} -d ${CONSOLIDATION_DB_NAME}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+    networks: [cashflow-net]
+
+  # O healthcheck do broker existe para diagnóstico e para os testes de
+  # integração — nunca como `condition: service_healthy` de outro serviço.
+  rabbitmq:
+    image: rabbitmq:4.3-management-alpine
+    container_name: rabbitmq
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD}
+    ports:
+      - "${RABBITMQ_PORT}:5672"
+      - "${RABBITMQ_MANAGEMENT_PORT}:15672"
+    volumes:
+      - rabbitmq-data:/var/lib/rabbitmq
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "check_running"]
+      interval: 10s
+      timeout: 10s
+      retries: 10
+      start_period: 30s
+    networks: [cashflow-net]
+
+  cashflow-api:
+    build:
+      context: .
+      dockerfile: src/CashFlow.Api/Dockerfile
+    container_name: cashflow-api
+    environment:
+      ASPNETCORE_ENVIRONMENT: ${ASPNETCORE_ENVIRONMENT}
+      ASPNETCORE_HTTP_PORTS: 8080
+      ConnectionStrings__CashFlowDb: Host=cashflow-db;Port=5432;Database=${CASHFLOW_DB_NAME};Username=${CASHFLOW_DB_USER};Password=${CASHFLOW_DB_PASSWORD}
+      RabbitMq__Host: rabbitmq
+      RabbitMq__Port: 5672
+      RabbitMq__Username: ${RABBITMQ_USER}
+      RabbitMq__Password: ${RABBITMQ_PASSWORD}
+    ports:
+      - "${CASHFLOW_API_PORT}:8080"
+    depends_on:
+      cashflow-db:
+        condition: service_healthy
+    networks: [cashflow-net]
+
+  consolidation-api:
+    build:
+      context: .
+      dockerfile: src/Consolidation.Api/Dockerfile
+    container_name: consolidation-api
+    environment:
+      ASPNETCORE_ENVIRONMENT: ${ASPNETCORE_ENVIRONMENT}
+      ASPNETCORE_HTTP_PORTS: 8080
+      ConnectionStrings__ConsolidationDb: Host=consolidation-db;Port=5432;Database=${CONSOLIDATION_DB_NAME};Username=${CONSOLIDATION_DB_USER};Password=${CONSOLIDATION_DB_PASSWORD}
+    ports:
+      - "${CONSOLIDATION_API_PORT}:8080"
+    depends_on:
+      consolidation-db:
+        condition: service_healthy
+    networks: [cashflow-net]
+
+  consolidation-worker:
+    build:
+      context: .
+      dockerfile: src/Consolidation.Worker/Dockerfile
+    container_name: consolidation-worker
+    environment:
+      DOTNET_ENVIRONMENT: ${ASPNETCORE_ENVIRONMENT}
+      ConnectionStrings__ConsolidationDb: Host=consolidation-db;Port=5432;Database=${CONSOLIDATION_DB_NAME};Username=${CONSOLIDATION_DB_USER};Password=${CONSOLIDATION_DB_PASSWORD}
+      RabbitMq__Host: rabbitmq
+      RabbitMq__Port: 5672
+      RabbitMq__Username: ${RABBITMQ_USER}
+      RabbitMq__Password: ${RABBITMQ_PASSWORD}
+    depends_on:
+      consolidation-db:
+        condition: service_healthy
+    networks: [cashflow-net]
+
+volumes:
+  cashflow-db-data:
+  consolidation-db-data:
+  rabbitmq-data:
+
+networks:
+  cashflow-net:
+    driver: bridge
