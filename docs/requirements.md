@@ -278,7 +278,7 @@ vez de parecer que RabbitMQ e Outbox entraram apenas para sofisticar o projeto.
 | RNF-008 Idempotência | Registro de eventos processados no consumidor | [ADR-007](./decisions/ADR-007-idempotency.md) |
 | RNF-009 Testabilidade | TDD | [ADR-008](./decisions/ADR-008-tdd.md) |
 | RNF-010 Manutenibilidade | Clean Architecture + SOLID | [ADR-001](./decisions/ADR-001-architecture.md) |
-| RNF-011 Tratamento de erros | Result pattern + middleware de exceção + DLQ | [ADR-001](./decisions/ADR-001-architecture.md), [ADR-003](./decisions/ADR-003-messaging.md) |
+| RNF-011 Tratamento de erros | Exceção de domínio + middleware de exceção → Problem Details + DLQ | [ADR-001](./decisions/ADR-001-architecture.md), [ADR-003](./decisions/ADR-003-messaging.md) |
 | RNF-012 Reprodutibilidade | Docker Compose | [ADR-009](./decisions/ADR-009-containers.md) |
 | RNF-013 Observabilidade | Logs estruturados + correlation id + health checks | [ADR-011](./decisions/ADR-011-observability.md) |
 | RNF-014 Documentação | ADRs + README + diagramas | Este conjunto de documentos |
