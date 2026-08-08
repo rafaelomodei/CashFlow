@@ -18,15 +18,22 @@ Cada funcionalidade nasce de um ciclo explícito:
              → rodar → continuar verde
 ```
 
-O commit segue o ciclo, não o arquivo:
+Esse ciclo é uma disciplina de **desenvolvimento**, não uma obrigação de histórico
+de commits. Não fazemos commit do estado RED: isso produziria commits que não
+compilam, um histórico impossível de bissectar e um CI vermelho de propósito.
+
+O commit segue a **unidade lógica de mudança**, e cada commit compila e mantém a
+suíte verde:
 
 ```
-test(domain): adicionar teste de valor negativo em Money      # RED
-feat(domain): rejeitar valor negativo em Money                # GREEN
-refactor(domain): extrair validação de Money                  # REFACTOR
+feat(domain): rejeitar valor não positivo em Money      # teste + implementação
+test(domain): ampliar cenários de arredondamento de Money
+refactor(domain): extrair validação de Money
 ```
 
-Isso torna o TDD **verificável no histórico**, e não apenas uma afirmação no README.
+O que precisa ser verificável não é a sequência ritual RED → GREEN, e sim que
+**toda regra de negócio tenha teste** e que o pipeline esteja verde a cada Pull
+Request (§5).
 
 ## 2. Níveis e responsabilidades
 
@@ -114,7 +121,7 @@ três blocos.
 | Broker fora do ar | `POST` retorna `201` e mensagem fica pendente | RNF-001 |
 | Broker volta | Pendentes são publicadas e o saldo converge | RNF-007 |
 | Falha na publicação | Mensagem não é marcada como processada; `attempts` incrementa | ADR-004 |
-| Dois publishers simultâneos | Nenhuma mensagem publicada em duplicidade (SKIP LOCKED) | ADR-004 |
+| Dois publishers simultâneos | Nenhuma mensagem publicada em duplicidade (SKIP LOCKED) | ADR-004 — só quando houver mais de uma instância; fora do MVP |
 
 ### Integração — Consumidor
 
@@ -150,6 +157,8 @@ obrigação.
 
 ## 5. Execução
 
+### Local
+
 ```bash
 dotnet test                                        # suíte completa
 dotnet test --filter Category=Unit                 # apenas unitários (sem Docker)
@@ -160,12 +169,41 @@ dotnet test --collect:"XPlat Code Coverage"        # com cobertura
 Testes de integração exigem Docker disponível (Testcontainers). Testes unitários e
 de arquitetura não exigem nada além do SDK.
 
+### Integração contínua
+
+O pipeline (GitHub Actions, `.github/workflows/ci.yml`) roda em todo push e em
+todo Pull Request, a partir da etapa 5 do [roadmap](./roadmap.md):
+
+```
+restore
+   ↓
+build  (warnings como erro)
+   ↓
+testes unitários
+   ↓
+testes de arquitetura
+   ↓
+testes de integração  (Testcontainers)
+```
+
+Decisões do pipeline:
+
+- Unitários e de arquitetura formam o **gate rápido**: falham em segundos e são o
+  primeiro sinal.
+- Integração roda como job separado. Se o custo de Testcontainers pesar demais no
+  tempo de feedback, esse job pode ser restrito a Pull Requests para `master` —
+  registrado aqui como decisão consciente, não como omissão.
+- `master` fica protegida: sem CI verde, sem merge. É isso que transforma "seguimos
+  TDD e qualidade" em uma propriedade do repositório, e não em uma afirmação do
+  README.
+
 ## 6. Critério de pronto
 
 Nenhuma alteração é considerada concluída sem:
 
-- [ ] Teste escrito antes da implementação
+- [ ] Teste escrito antes da implementação (durante o desenvolvimento — ver §1)
 - [ ] Suíte completa verde
 - [ ] Regra de negócio nova coberta em nível unitário
 - [ ] Comportamento de infraestrutura novo coberto em nível de integração
 - [ ] Testes de arquitetura passando
+- [ ] CI verde no Pull Request

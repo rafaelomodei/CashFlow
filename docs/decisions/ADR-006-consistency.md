@@ -90,9 +90,9 @@ não `404`. Ausência de movimentação é uma resposta legítima, não um erro.
 
 | Alternativa | Prós | Contras | Veredito |
 |-------------|------|---------|----------|
-| Consistência forte via transação distribuída (2PC) | Saldo sempre exato | Bloqueante, frágil, acopla os contextos — anula RNF-001 | Rejeitada |
-| Consolidação síncrona no `POST /transactions` | Simples de entender, saldo imediato | Acoplamento temporal total: consolidação fora do ar quebra o lançamento | Rejeitada — viola RNF-001 |
-| Saldo calculado sob demanda (`SUM` na hora) | Sempre exato, sem duplicação | Exigiria acesso ao banco de lançamentos — anula o desacoplamento; custo cresce com o histórico | Rejeitada |
+| Consistência forte via transação distribuída (2PC) | Saldo sempre exato | Bloqueante, frágil, acopla a disponibilidade dos dois contextos — trabalha contra RNF-001 | Rejeitada |
+| Consolidação síncrona no `POST /transactions` | Simples de entender, saldo imediato | Acoplamento temporal total: consolidação fora do ar impede o lançamento | Rejeitada — contraria RNF-001 |
+| Saldo calculado sob demanda (`SUM` na hora) | Sempre exato, sem duplicação | Exigiria acesso ao banco de lançamentos — reintroduz o acoplamento; custo cresce com o histórico | Rejeitada |
 | Consistência eventual por eventos | Independência de falha, absorve pico | Janela de defasagem; exige idempotência | **Escolhida** |
 | Job em lote no fim do dia | Simples | Saldo do dia corrente indisponível durante o dia | Rejeitada |
 

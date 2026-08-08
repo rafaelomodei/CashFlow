@@ -211,8 +211,10 @@ taxa de erro HTTP  < 1%
 perda de eventos   = 0%
 ```
 
-A perda de eventos deve ser zero por construção: o Outbox garante que nenhum
-evento se perde, apenas atrasa. Ver [ADR-004](./decisions/ADR-004-transactional-outbox.md).
+A meta de perda zero se apoia no Outbox: o evento é gravado na mesma transação do
+lançamento e permanece durável no banco até ser publicado, de modo que uma falha
+do broker atrasa a consolidação em vez de descartar o evento. Ver
+[ADR-004](./decisions/ADR-004-transactional-outbox.md).
 
 A verificação é feita com k6 — ver [ADR-010](./decisions/ADR-010-performance-validation.md).
 
@@ -240,9 +242,10 @@ Vão além do exigido e são decisão nossa, não do enunciado:
 
 | ID | Restrição | Justificativa |
 |----|-----------|---------------|
-| RT-101 | TDD como fluxo de desenvolvimento | O desafio exige testes; TDD garante que sejam causa e não consequência do design |
+| RT-101 | TDD como fluxo de desenvolvimento | O desafio exige testes; TDD faz com que sejam causa e não consequência do design |
 | RT-102 | ADRs para decisões arquiteturais | Torna as escolhas auditáveis e reversíveis |
 | RT-103 | Sem coautoria de IA em commits e PRs | Autoria exclusiva do desenvolvedor |
+| RT-104 | CI executando build e testes em todo Pull Request | Transforma o critério de qualidade em barreira automática, e não em declaração |
 
 ### Requisitos opcionais do enunciado que decidimos atender
 
@@ -275,6 +278,7 @@ vez de parecer que RabbitMQ e Outbox entraram apenas para sofisticar o projeto.
 | RNF-012 Reprodutibilidade | Docker Compose | [ADR-009](./decisions/ADR-009-containers.md) |
 | RNF-013 Observabilidade | Logs estruturados + correlation id + health checks | [ADR-011](./decisions/ADR-011-observability.md) |
 | RNF-014 Documentação | ADRs + README + diagramas | Este conjunto de documentos |
+| RT-104 CI | GitHub Actions com build e testes por PR | [`testing-strategy.md`](./testing-strategy.md) §5 |
 | RNF-003/004 Validação | Testes de carga com k6 | [ADR-010](./decisions/ADR-010-performance-validation.md) |
 | RT-001 C# | .NET / C# | [ADR-012](./decisions/ADR-012-tech-stack.md) |
 | RN-001..004 Valores monetários | Value Objects `Money` e `TransactionType` | [ADR-013](./decisions/ADR-013-money-representation.md) |

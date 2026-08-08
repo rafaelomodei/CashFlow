@@ -11,7 +11,7 @@
 [✓] Etapa 2  Mapeamento de requisitos
 [✓] Etapa 3  Decisões arquiteturais (ADRs)
 [ ] Etapa 4  Desenho dos contratos de API e eventos
-[ ] Etapa 5  Esqueleto da solução e ambiente
+[ ] Etapa 5  Esqueleto da solução, ambiente e CI
 [ ] Etapa 6  Domínio (TDD)
 [ ] Etapa 7  Casos de uso (TDD)
 [ ] Etapa 8  Infraestrutura de lançamentos
@@ -56,16 +56,37 @@ contextos e mudá-lo depois custa retrabalho dos dois lados.
 
 **Saída:** `docs/api-contracts.md`
 
-## Etapa 5 — Esqueleto da solução e ambiente
+## Etapa 5 — Esqueleto da solução, ambiente e CI
+
+```
+.github/
+└── workflows/
+    └── ci.yml
+src/
+tests/
+CashFlow.sln
+Directory.Build.props
+.editorconfig
+global.json
+docker-compose.yml
+```
 
 - Estrutura de projetos conforme [`architecture.md`](./architecture.md) §8
-- `global.json`, `Directory.Build.props`, `.editorconfig`
+- `global.json` (.NET 10), `Directory.Build.props`, `.editorconfig`
 - Projetos de teste vazios e rodando
 - `docker-compose.yml` com bancos e broker
 - Testes de arquitetura já ativos — as fronteiras passam a ser protegidas desde o
   primeiro commit de código, e não depois que forem violadas
+- **CI no GitHub Actions** desde já: `restore → build → unitários → arquitetura →
+  integração`, conforme [`testing-strategy.md`](./testing-strategy.md) §5
+- `master` protegida: merge apenas com CI verde
 
-**Critério:** `dotnet build` e `docker compose up -d` funcionam.
+A CI entra aqui, e não no fim, porque `dotnet build` e `dotnet test` já foram
+declarados como critério de qualidade nas etapas anteriores. Critério de qualidade
+que não é executado automaticamente é intenção, não garantia.
+
+**Critério:** `dotnet build` e `docker compose up -d` funcionam, e o pipeline roda
+verde em um Pull Request de teste.
 
 ## Etapa 6 — Domínio (TDD)
 
@@ -99,6 +120,12 @@ contextos e mudá-lo depois custa retrabalho dos dois lados.
 - `OutboxPublisherService` com publisher confirms e retry
 - Topologia RabbitMQ (exchange, fila, DLQ)
 
+Ordem deliberada: **primeiro o fluxo simples com uma única instância do
+publisher**. `SELECT ... FOR UPDATE SKIP LOCKED` e concorrência entre múltiplos
+publishers só entram depois de o caminho básico estar funcionando e testado — a
+idempotência do consumidor já cobre a duplicação eventual, então a concorrência é
+otimização, não pré-requisito ([ADR-004](./decisions/ADR-004-transactional-outbox.md)).
+
 **Critério:** com o broker fora do ar, `POST` retorna `201` e as mensagens são
 publicadas quando ele volta. Este é o primeiro ponto em que RNF-001 fica
 demonstrável.
@@ -108,9 +135,28 @@ demonstrável.
 - Consumidor com ack manual
 - `processed_events` e transação única
 - Upsert atômico do saldo diário
-- Retry com backoff e DLQ
+- **Especificar o mecanismo concreto de retry** antes de implementá-lo
 
-**Critério:** mesmo evento publicado N vezes altera o saldo uma única vez.
+O item de retry é o que exige mais cuidado nesta etapa. `nack` com `requeue=true`
+não produz backoff: a mensagem volta para a frente da fila e é reentregue de
+imediato, criando um laço quente entre falha e reentrega. O desenho precisa
+definir explicitamente:
+
+```
+erro transitório  →  retry controlado (com espera real entre tentativas)
+                          ↓
+                  limite de tentativas atingido
+                          ↓
+                         DLQ
+```
+
+Alternativas a avaliar na etapa: fila de retry com TTL + dead-letter exchange
+(delay queues), contagem de tentativas via header (`x-death`), ou retry
+in-process com espera limitada antes do `nack`. A escolha e o motivo entram em
+[ADR-003](./decisions/ADR-003-messaging.md).
+
+**Critério:** mesmo evento publicado N vezes altera o saldo uma única vez, e uma
+mensagem que falha sempre chega à DLQ em tempo finito, sem laço quente.
 
 ## Etapa 11 — APIs HTTP
 
@@ -142,9 +188,34 @@ demonstrável.
 - Revisão das ADRs contra o que foi realmente implementado — decisão que mudou
   durante a implementação vira ADR nova, não edição silenciosa
 - Diagramas finais
+- Decidir sobre a permanência dos arquivos de instrução de agentes (`AGENTS.md`,
+  `CLAUDE.md`, `.claude/`): são ferramenta de processo, não parte da solução
 - Repositório público no GitHub
 
 **Critério:** clone limpo → `docker compose up -d` → sistema funcional.
+
+---
+
+## Ordem de prioridade sob restrição de tempo
+
+A arquitetura tem muitas partes móveis. Se o tempo apertar, o corte é feito de
+baixo para cima nesta ordem — e nunca de cima para baixo:
+
+```
+CORRETUDE      lançamento, consolidação, saldo correto
+     >
+TESTES         domínio, casos de uso, integração dos fluxos críticos
+     >
+RESILIÊNCIA    outbox, idempotência, comportamento com broker fora do ar
+     >
+DOCUMENTAÇÃO   README, ADRs, diagramas
+     >
+EXTRAS         k6, tracing, dashboards, reprocessamento automático da DLQ
+```
+
+O enunciado admite que melhorias possam ser apenas **documentadas** em vez de
+implementadas. Entregar o núcleo funcionando e registrar o resto como melhoria
+futura é uma entrega melhor do que entregar tudo pela metade.
 
 ---
 

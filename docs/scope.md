@@ -57,6 +57,7 @@ com regra própria e testes próprios.
 - Docker Compose para subir todo o ambiente localmente
 - Script de carga k6 validando 50 req/s
 - Logs estruturados e health checks
+- Pipeline de CI executando build e testes em todo Pull Request
 - Documentação: README, arquitetura, ADRs, diagramas
 
 ## 4. Fora do escopo (e por quê)
@@ -89,9 +90,10 @@ com regra própria e testes próprios.
 Um item só é considerado pronto quando:
 
 - [ ] Existe teste automatizado escrito **antes** da implementação (TDD)
-- [ ] A suíte completa passa (`dotnet test`)
+- [ ] A suíte completa passa (`dotnet test`) e o CI está verde no Pull Request
 - [ ] O código respeita as fronteiras de camada da Clean Architecture
 - [ ] Não há regra de negócio fora de `Domain` ou `Application`
-- [ ] Decisões arquiteturais novas viraram ADR
+- [ ] Decisões **estruturais** novas viraram ADR (critério em
+      [`decisions/README.md`](./decisions/README.md#quando-criar-uma-nova-adr))
 - [ ] O ambiente sobe com um único `docker compose up`
 - [ ] O README reflete o estado real do projeto

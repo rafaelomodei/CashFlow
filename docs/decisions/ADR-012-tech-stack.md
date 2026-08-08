@@ -1,4 +1,4 @@
-# ADR-012 — Stack técnica: .NET 9 e ASP.NET Core
+# ADR-012 — Stack técnica: .NET 10 e ASP.NET Core
 
 - **Status:** Aceito
 - **Data:** 2026-08-08
@@ -14,10 +14,10 @@ testabilidade avaliadas pelo desafio.
 
 | Item | Escolha | Justificativa |
 |------|---------|---------------|
-| Runtime | **.NET 9** | Versão atual, suportada, com melhor desempenho de startup e menor consumo em container |
+| Runtime | **.NET 10** | Versão **LTS** ativa no início do desenvolvimento; janela de suporte longa e sem migração forçada no meio do projeto |
 | Estilo de API | **Controllers** | Fronteira explícita entre HTTP e aplicação, alinhada às camadas de [ADR-001](./ADR-001-architecture.md) |
 | Validação | **FluentValidation** na borda | Mantém validação de entrada fora do domínio; regras de negócio permanecem nas entidades |
-| ORM | **EF Core 9** + Npgsql | Migrations e `DbContext` como Unit of Work — ver [ADR-005](./ADR-005-database.md) |
+| ORM | **EF Core 10** + Npgsql | Migrations e `DbContext` como Unit of Work — ver [ADR-005](./ADR-005-database.md) |
 | Mensageria | **RabbitMQ.Client** | Cliente oficial, controle explícito de ack, confirms e DLQ — ver [ADR-003](./ADR-003-messaging.md) |
 | Workers | **`BackgroundService`** | Hospedagem nativa, sem framework adicional |
 | Testes | **xUnit + FluentAssertions + NSubstitute + Testcontainers** | Ver [ADR-008](./ADR-008-tdd.md) |
@@ -43,7 +43,8 @@ consciente sobre o objetivo do projeto, não desconhecimento da alternativa.
 
 | Alternativa | Prós | Contras | Veredito |
 |-------------|------|---------|----------|
-| .NET 8 (LTS) | Suporte de longo prazo | Sem ganho técnico relevante para este escopo | Rejeitada — seria a escolha certa em produção corporativa |
+| .NET 9 (STS) | Estável e amplamente conhecida | Ciclo STS, já no fim da janela de suporte; escolher hoje significaria nascer em manutenção | Rejeitada |
+| .NET 8 (LTS anterior) | Ainda suportada, ecossistema maduro | Janela de suporte menor que a do .NET 10, sem ganho técnico compensatório | Rejeitada |
 | Minimal APIs | Menos cerimônia, arquivos menores | Fronteira de camada menos evidente | Rejeitada, mas defensável |
 | MediatR como padrão de aplicação | Uniformiza os casos de uso; pipeline behaviors | Indireção sem necessidade neste tamanho | Rejeitada |
 | MassTransit | Outbox, retry e idempotência prontos | Esconde o que o desafio quer ver | Rejeitada conscientemente |
@@ -58,7 +59,8 @@ consciente sobre o objetivo do projeto, não desconhecimento da alternativa.
 
 **Negativas**
 
-- .NET 9 não é LTS: em um produto real, .NET 8 seria a escolha mais prudente.
+- Exige SDK do .NET 10 na máquina de quem avalia (mitigado pelo `global.json` e
+  pela execução via Docker, que não depende do SDK local).
 - Implementar outbox e retry manualmente custa mais código e mais testes do que
   usar MassTransit.
 - Mapeamento manual entre camadas gera código repetitivo.

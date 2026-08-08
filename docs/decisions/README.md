@@ -22,7 +22,7 @@ com um documento, e não com "foi assim que decidimos".
 | [ADR-009](./ADR-009-containers.md) | Docker e Docker Compose para reprodutibilidade | Aceito | RNF-012, RT-007 |
 | [ADR-010](./ADR-010-performance-validation.md) | Validação de performance com k6 | Aceito | RNF-003, RNF-004 |
 | [ADR-011](./ADR-011-observability.md) | Observabilidade: logs, correlação e health checks | Aceito | RNF-011, RNF-013 |
-| [ADR-012](./ADR-012-tech-stack.md) | Stack técnica: .NET 9 e ASP.NET Core | Aceito | RT-001 |
+| [ADR-012](./ADR-012-tech-stack.md) | Stack técnica: .NET 10 e ASP.NET Core | Aceito | RT-001 |
 | [ADR-013](./ADR-013-money-representation.md) | Representação de valores monetários e tipo de lançamento | Aceito | RN-001..004 |
 
 Template para novas decisões: [ADR-000](./ADR-000-template.md).
@@ -57,6 +57,26 @@ monolito modular. Isso é intencional: nenhuma peça está no projeto por si mes
 ADR-001 e ADR-008 se reforçam mutuamente (Clean Architecture viabiliza o TDD; o
 TDD pressiona por fronteiras limpas). ADR-012 e ADR-013 são consequência da
 restrição de linguagem e da natureza financeira do domínio, independentes do resto.
+
+## Quando criar uma nova ADR
+
+As 13 ADRs acima cobrem o desenho do sistema. Daqui para frente o conjunto é
+tratado como **fechado por padrão**: documentação que cresce mais rápido que o
+sistema deixa de ser justificativa e passa a ser ruído.
+
+Uma nova ADR só é criada quando uma decisão **estrutural** muda ou aparece:
+
+| Cria ADR | Não cria ADR |
+|----------|--------------|
+| Trocar o mecanismo de outbox por outra abordagem | Nome de DTO ou de endpoint |
+| Trocar o banco ou a topologia de bancos | Escolha de biblioteca trivial |
+| Mudar a estratégia de retry / DLQ | Estrutura de pastas dentro de um projeto |
+| Mudar a divisão entre os serviços | Regra de validação específica |
+| Mudar o contrato de evento de forma incompatível | Detalhe de implementação reversível em uma tarde |
+
+O critério prático: se a decisão for cara de reverter e afetar mais de um
+componente, vira ADR. Caso contrário, vira comentário no código ou nota na
+documentação existente.
 
 ## Convenções
 

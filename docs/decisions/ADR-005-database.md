@@ -12,9 +12,14 @@ Duas decisões distintas se sobrepõem aqui:
 2. **Quantos bancos** usar.
 
 A segunda é a arquiteturalmente relevante. [ADR-002](./ADR-002-service-decomposition.md)
-exige independência de falha entre lançamentos e consolidação; um banco
-compartilhado destruiria essa independência, porque a indisponibilidade de uma
-única instância derrubaria os dois contextos ao mesmo tempo.
+busca independência de falha entre lançamentos e consolidação, e a escolha aqui é
+sobre **até onde** esse isolamento vai.
+
+O enunciado exige que a falha da consolidação não derrube os lançamentos, mas não
+delimita o domínio dessa falha. Um banco compartilhado atenderia ao requisito em
+alguns cenários (worker parado, API de consolidação fora do ar) e não atenderia em
+outro bem plausível: a indisponibilidade da própria instância de banco, que
+derrubaria os dois contextos de uma vez.
 
 Além disso, o domínio lida com **valores monetários**, o que impõe uma restrição
 concreta: nada de ponto flutuante.
@@ -47,8 +52,14 @@ Restrições que preservam o isolamento:
 - Nenhum `JOIN`, `FOREIGN KEY` ou view entre os dois esquemas.
 - Credenciais separadas.
 - Em Docker Compose, **containers separados** — não apenas schemas distintos na
-  mesma instância. Compartilhar a instância manteria um ponto único de falha e
-  anularia RNF-001.
+  mesma instância. Compartilhar a instância manteria um ponto único de falha na
+  camada de persistência, justamente o cenário que queremos poder demonstrar.
+
+Bancos independentes foram escolhidos para **ampliar o isolamento de falha** e
+permitir demonstrar RNF-001 mesmo quando a indisponibilidade atingir a persistência
+da consolidação. Não é a única topologia capaz de atender ao enunciado; é a que
+oferece o nível de isolamento que decidimos sustentar, com os custos registrados
+abaixo.
 
 ## Alternativas consideradas
 
@@ -56,8 +67,8 @@ Restrições que preservam o isolamento:
 
 | Alternativa | Prós | Contras | Veredito |
 |-------------|------|---------|----------|
-| Banco único compartilhado | Simples, consistência transacional, sem duplicação | Ponto único de falha; contenção de recursos; acoplamento por esquema — **anula RNF-001** | Rejeitada |
-| Mesma instância, schemas separados | Isolamento lógico, menos containers | Falha da instância derruba os dois contextos | Rejeitada |
+| Banco único compartilhado | Simples, consistência transacional, sem duplicação | Ponto único de falha; contenção de recursos; acoplamento por esquema — atende RNF-001 apenas para falhas de aplicação, não de persistência | Rejeitada |
+| Mesma instância, schemas separados | Isolamento lógico, menos containers | Falha da instância derruba os dois contextos | Rejeitada — defensável se o custo de infra fosse restrição |
 | Instâncias separadas | Isolamento real de falha, evolução independente do esquema | Dado duplicado, mais recursos, sem JOIN entre contextos | **Escolhida** |
 
 ### Tecnologia
@@ -83,14 +94,14 @@ Restrições que preservam o isolamento:
 
 - Isolamento de falha real entre contextos (RNF-001, RNF-002).
 - Cada contexto evolui seu esquema sem coordenação com o outro.
-- `numeric` garante exatidão monetária.
+- `numeric` preserva exatidão decimal nos valores monetários.
 - O `DbContext` como Unit of Work viabiliza a atomicidade lançamento + outbox.
 
 **Negativas**
 
 - O valor do lançamento existe duplicado nos dois lados.
-- Impossível responder por SQL "quais lançamentos compõem este saldo" — exigiria
-  consulta a dois sistemas.
+- Não há como responder por uma única consulta SQL "quais lançamentos compõem este
+  saldo" — exigiria consulta aos dois sistemas.
 - Mais consumo de recursos no ambiente local.
 - Divergência entre lançamentos e saldo é possível e precisa ser detectável.
 

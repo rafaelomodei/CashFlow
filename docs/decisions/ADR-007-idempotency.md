@@ -91,7 +91,7 @@ Registrado como melhoria futura.
 | Tabela de eventos processados com PK | Simples, garantido pelo banco, sem corrida | Tabela cresce; exige expurgo | **Escolhida** |
 | `SELECT` antes do `INSERT` | Intuitivo | Condição de corrida entre consumidores concorrentes | Rejeitada |
 | Deduplicação em cache (Redis) | Rápido, TTL automático | Perda de estado do cache reabre a janela de duplicação; mais um componente | Rejeitada |
-| Recalcular o saldo do dia inteiro a cada evento | Naturalmente idempotente | Exigiria acesso a todos os lançamentos do dia — anula o desacoplamento; custo O(n) por evento | Rejeitada |
+| Recalcular o saldo do dia inteiro a cada evento | Naturalmente idempotente | Exigiria acesso a todos os lançamentos do dia — reintroduz o acoplamento entre contextos; custo O(n) por evento | Rejeitada |
 | Guardar os `transactionId` já aplicados por dia | Idempotência com semântica de negócio | Equivale à tabela de eventos, porém acoplada ao formato do saldo | Rejeitada |
 | Exactly-once do broker | Sem código de idempotência | Não existe de fato fim a fim; falsa sensação de segurança | Rejeitada |
 

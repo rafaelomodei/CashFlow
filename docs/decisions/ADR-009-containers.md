@@ -25,20 +25,50 @@ docker compose up -d
 
 ### Serviços do Compose
 
-| Serviço | Imagem | Porta | Depende de |
-|---------|--------|-------|------------|
+| Serviço | Imagem | Porta | `depends_on` |
+|---------|--------|-------|--------------|
 | `cashflow-db` | `postgres:16-alpine` | 5432 | — |
 | `consolidation-db` | `postgres:16-alpine` | 5433 | — |
-| `rabbitmq` | `rabbitmq:3-management-alpine` | 5672 / 15672 | — |
-| `cashflow-api` | build local | 5001 | `cashflow-db`, `rabbitmq` |
-| `consolidation-worker` | build local | — | `consolidation-db`, `rabbitmq` |
+| `rabbitmq` | `rabbitmq:4.3-management-alpine` | 5672 / 15672 | — |
+| `cashflow-api` | build local | 5001 | `cashflow-db` |
+| `consolidation-worker` | build local | — | `consolidation-db` |
 | `consolidation-api` | build local | 5002 | `consolidation-db` |
+
+### Dependência obrigatória × dependência opcional
+
+Esta distinção é a decisão mais importante desta ADR, porque é onde RNF-001 pode
+ser perdido silenciosamente na configuração do ambiente:
+
+```
+cashflow-api          ──REQUER──▶  cashflow-db
+outbox publisher      ──RETRY──▶   rabbitmq
+consolidation-worker  ──REQUER──▶  consolidation-db
+consolidation-worker  ──RETRY──▶   rabbitmq
+consolidation-api     ──REQUER──▶  consolidation-db
+```
+
+**Nenhum serviço declara `depends_on` no `rabbitmq`.** Colocar o broker como
+pré-condição de startup da Cash Flow API contradiria tanto o Outbox
+([ADR-004](./ADR-004-transactional-outbox.md)) quanto a definição de prontidão de
+[ADR-011](./ADR-011-observability.md): com o RabbitMQ fora do ar, a API precisa
+**subir**, responder `200` em `/health/ready` e aceitar `POST /transactions`
+normalmente — o evento fica retido no outbox.
+
+A conexão com o broker é, portanto, responsabilidade do publisher e do consumidor,
+via reconexão com retry em segundo plano, e não do orquestrador de containers.
+O mesmo vale para o worker: sem broker ele fica ocioso tentando reconectar, o que
+é o comportamento correto, e não uma falha de boot.
 
 Decisões de configuração:
 
-- **Healthchecks** em bancos e broker, com `depends_on: condition: service_healthy`.
-  Sem isso, as aplicações sobem antes das dependências e falham no primeiro boot —
-  o que daria a falsa impressão de sistema quebrado.
+- **Healthchecks** em bancos e broker. `depends_on: condition: service_healthy`
+  é usado apenas nas dependências **obrigatórias** (os bancos). Sem isso, as
+  aplicações sobem antes do banco e falham no primeiro boot — o que daria a falsa
+  impressão de sistema quebrado. O healthcheck do `rabbitmq` existe para
+  diagnóstico e para os testes de integração, não para bloquear startup.
+- **Versões de imagem fixadas** por série (`postgres:16-alpine`,
+  `rabbitmq:4.3-management-alpine`), nunca `latest` nem tag flutuante de série
+  maior: o ambiente precisa ser o mesmo hoje e daqui a seis meses (RNF-012).
 - **Dockerfiles multi-stage** (`sdk` para build, `aspnet`/`runtime` para execução),
   com usuário não-root e imagem final enxuta.
 - **Migrations aplicadas no startup** de cada serviço. Em produção isso seria
@@ -98,3 +128,7 @@ RNF-012, RT-007, requisito opcional do enunciado (containers)
 - Todos os healthchecks ficam `healthy`.
 - `POST /transactions` seguido de `GET /daily-balances/{date}` funciona ponta a ponta.
 - `docker compose down -v && docker compose up -d` retorna ao estado inicial.
+- **Sem broker:** `docker compose up -d --scale rabbitmq=0` (ou
+  `docker compose stop rabbitmq`) e a `cashflow-api` ainda sobe, fica `ready` e
+  responde `201` em `POST /transactions`. Este é o teste que prova que a
+  dependência opcional foi configurada como opcional de fato.

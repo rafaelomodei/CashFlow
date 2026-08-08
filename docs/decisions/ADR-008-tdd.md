@@ -32,7 +32,25 @@ Regras operacionais:
 2. Escreve-se apenas o suficiente para o teste falhar (não compilar já é falhar).
 3. Escreve-se apenas o suficiente para o teste passar.
 4. A refatoração acontece com a suíte verde.
-5. O histórico de commits deve tornar o ciclo visível.
+5. O ciclo é uma disciplina de **desenvolvimento**, não de histórico de commits —
+   ver abaixo.
+
+### O ciclo não vira coreografia de Git
+
+TDD acontece no editor, em ciclos de minutos. Transformá-lo em obrigação de
+commits (`test:` quebrado → `feat:` que conserta) produziria commits vermelhos de
+propósito, um histórico que não pode ser bissectado e um pipeline que falha por
+construção em metade das revisões.
+
+A regra adotada é outra:
+
+- Commits pequenos e **coerentes**: cada commit compila e mantém a suíte verde.
+- Teste e implementação podem ir no mesmo commit quando são uma única mudança
+  lógica; podem ir separados quando o teste tem valor próprio (ampliar cenários,
+  cobrir um caso de borda já suportado).
+- O que precisa ser verificável é a **cobertura das regras por testes** e o verde
+  do pipeline, não a prova ritual de que o teste esteve vermelho cinco minutos
+  antes.
 
 ### Pirâmide de testes adotada
 
@@ -114,6 +132,7 @@ RT-002, RT-101, RNF-009, RNF-010
 
 ## Como validar
 
-- `dotnet test` verde é pré-requisito de qualquer merge.
-- O histórico de commits mostra teste antes da implementação.
+- `dotnet test` verde é pré-requisito de qualquer merge, verificado por CI em
+  todo Pull Request — não por disciplina declarada.
+- Toda regra de negócio (RN-001 a RN-004) tem teste correspondente.
 - Testes de domínio rodam sem nenhum container ativo.

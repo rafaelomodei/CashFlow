@@ -71,27 +71,50 @@ outbox_messages
 O índice parcial mantém a varredura de pendentes barata mesmo com a tabela
 crescendo, já que a esmagadora maioria das linhas estará processada.
 
-Concorrência entre instâncias do publisher é resolvida com
-`SELECT ... FOR UPDATE SKIP LOCKED`, permitindo escalar horizontalmente sem
-publicar a mesma mensagem duas vezes na maior parte dos casos — e quando publicar,
-a idempotência do consumidor absorve ([ADR-007](./ADR-007-idempotency.md)).
+### Escopo do publisher no MVP
+
+O MVP roda **uma única instância do publisher**. Isso é deliberado: o que o
+desafio pede para demonstrar é a cadeia
+
+```
+commit do lançamento ✅  +  RabbitMQ fora do ar ❌
+        ↓
+evento permanece pendente no outbox
+        ↓
+API continua respondendo 201
+        ↓
+broker volta
+        ↓
+evento é publicado e o saldo converge
+```
+
+Nada disso depende de concorrência entre publishers.
+
+Para **múltiplas instâncias**, o mecanismo previsto é
+`SELECT ... FOR UPDATE SKIP LOCKED`, que permite escalar horizontalmente sem que
+duas instâncias reivindiquem a mesma mensagem. Ele entra depois do fluxo simples
+estar funcionando e testado, não antes — e mesmo então é otimização de vazão, não
+condição de correção: a entrega já é *at-least-once* e a idempotência do consumidor
+absorve qualquer duplicação ([ADR-007](./ADR-007-idempotency.md)).
 
 ## Alternativas consideradas
 
 | Alternativa | Prós | Contras | Veredito |
 |-------------|------|---------|----------|
-| Publicar direto no broker após o commit | Simples, sem tabela extra, menor latência | Perda silenciosa se o broker falhar na janela entre commit e publish | Rejeitada — viola RNF-007 |
+| Publicar direto no broker após o commit | Simples, sem tabela extra, menor latência | Perda silenciosa se o broker falhar na janela entre commit e publish | Rejeitada — contraria RNF-007 |
 | Publicar antes do commit | — | Pode publicar evento de lançamento inexistente | Rejeitada |
 | Two-Phase Commit (2PC) | Atomicidade real entre banco e broker | Complexo, frágil, mal suportado, bloqueante | Rejeitada |
 | CDC / Debezium lendo o WAL | Nenhum código de publicação, latência baixa | Infra pesada (Kafka Connect); acopla ao mecanismo interno do Postgres | Rejeitada — desproporcional |
-| Transactional Outbox | Atomicidade garantida pelo próprio banco, zero perda, retentável | Latência extra, tabela e worker a mais, exige limpeza | **Escolhida** |
+| Transactional Outbox | Atomicidade garantida pelo próprio banco, evento durável e retentável | Latência extra, tabela e worker a mais, exige limpeza | **Escolhida** |
 | Listen/Notify do Postgres | Baixa latência | Notificação não é durável: se ninguém escuta, perde-se | Rejeitada |
 
 ## Consequências
 
 **Positivas**
 
-- Perda de evento por falha de broker vira **zero por construção**.
+- A publicação do evento deixa de depender da disponibilidade do broker: o que não
+  foi publicado permanece durável no banco, e a perda passa a exigir perda do
+  próprio banco de lançamentos.
 - Recuperabilidade (RNF-007): tudo o que não foi publicado permanece pendente e
   visível na tabela.
 - A tabela de outbox é também um registro auditável do que foi emitido.
