@@ -147,6 +147,11 @@ Nenhuma falha do lado da consolidação produz erro no registro de lançamentos.
 Em todos esses casos o sistema converge sozinho quando o componente retorna:
 nenhum evento é perdido, apenas atrasado.
 
+Isso precisa valer também na configuração do ambiente, e não só no código: nenhum
+serviço declara o RabbitMQ como dependência de startup, e a prontidão da Cash Flow
+API não considera o broker. Ver [ADR-009](./decisions/ADR-009-containers.md) e
+[ADR-011](./decisions/ADR-011-observability.md).
+
 ## 7. Clean Architecture — camadas
 
 ```mermaid
@@ -189,6 +194,7 @@ tests/
 └── ArchitectureTests/                fronteiras de camada
 k6/                                   testes de carga
 docs/                                 esta documentação
+.github/workflows/                    pipeline de CI
 ```
 
 `Shared.Contracts` contém **apenas** os contratos dos eventos de integração —

@@ -69,9 +69,14 @@ busca. Sem ele, os logs de quatro processos são quatro histórias desconexas.
 
 Ponto arquitetural importante: a prontidão da **Cash Flow API não depende do
 RabbitMQ**. Se o broker estiver fora, a API continua `ready`, porque o Outbox
-garante que ela ainda opera corretamente ([ADR-004](./ADR-004-transactional-outbox.md)).
-Marcá-la como não-pronta faria um orquestrador retirá-la de serviço e violaria
-RNF-001 na prática — o requisito seria contrariado pela própria instrumentação.
+mantém o registro de lançamentos funcionando corretamente
+([ADR-004](./ADR-004-transactional-outbox.md)). Marcá-la como não-pronta faria um
+orquestrador retirá-la de serviço — a própria instrumentação passaria a produzir a
+indisponibilidade que RNF-001 pede para evitar.
+
+A mesma regra vale um nível abaixo, na topologia do Compose: nenhum serviço declara
+o `rabbitmq` como dependência de startup ([ADR-009](./ADR-009-containers.md)).
+Health check e `depends_on` precisam contar a mesma história.
 
 ### Sinais mínimos monitorados
 
@@ -101,7 +106,8 @@ configuração e não reescrita.
 
 - A jornada de um lançamento é rastreável entre os quatro processos.
 - Os sinais monitorados tornam visível a saúde dos pontos que as outras ADRs criaram.
-- Health checks viabilizam `depends_on: service_healthy` no Compose ([ADR-009](./ADR-009-containers.md)).
+- Health checks viabilizam `depends_on: service_healthy` no Compose para as
+  dependências **obrigatórias** ([ADR-009](./ADR-009-containers.md)).
 - Custo de infraestrutura zero.
 
 **Negativas**

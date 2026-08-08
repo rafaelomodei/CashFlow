@@ -77,7 +77,7 @@ graph TD
 
 | Camada | Tecnologia | Decisão |
 |--------|-----------|---------|
-| Linguagem / runtime | C# / .NET 9 | [ADR-012](./docs/decisions/ADR-012-tech-stack.md) |
+| Linguagem / runtime | C# / .NET 10 (LTS) | [ADR-012](./docs/decisions/ADR-012-tech-stack.md) |
 | API | ASP.NET Core (controllers) | [ADR-012](./docs/decisions/ADR-012-tech-stack.md) |
 | Persistência | PostgreSQL + EF Core | [ADR-005](./docs/decisions/ADR-005-database.md) |
 | Mensageria | RabbitMQ | [ADR-003](./docs/decisions/ADR-003-messaging.md) |
@@ -85,11 +85,13 @@ graph TD
 | Carga | k6 | [ADR-010](./docs/decisions/ADR-010-performance-validation.md) |
 | Logs | Serilog | [ADR-011](./docs/decisions/ADR-011-observability.md) |
 | Ambiente | Docker + Docker Compose | [ADR-009](./docs/decisions/ADR-009-containers.md) |
+| CI | GitHub Actions | [`testing-strategy.md`](./docs/testing-strategy.md#integração-contínua) |
 
 ## Estrutura do projeto
 
 ```
 docs/                  documentação, ADRs e enunciado
+.github/workflows/     pipeline de CI (⏳ etapa 5)
 src/                   código-fonte (⏳ etapa 5)
 tests/                 testes automatizados (⏳ etapa 5)
 k6/                    testes de carga (⏳ etapa 13)
@@ -158,6 +160,10 @@ TDD como fluxo de desenvolvimento, não como etapa posterior:
 [`docs/testing-strategy.md`](./docs/testing-strategy.md) e
 [ADR-008](./docs/decisions/ADR-008-tdd.md).
 
+O pipeline de CI roda `restore → build → unitários → arquitetura → integração` em
+todo Pull Request, e `master` só aceita merge com o pipeline verde. A garantia de
+qualidade é uma propriedade do repositório, não uma promessa desta seção.
+
 ⏳ *Resultados e cobertura serão publicados aqui a partir da etapa 6.*
 
 ## Performance
@@ -205,4 +211,5 @@ Itens conscientemente fora do MVP ([`docs/scope.md`](./docs/scope.md)):
 - **Saldo acumulado** e consulta por período
 - **Multi-tenant**, para atender múltiplos lojistas
 - **Migrations como passo de deploy**, em vez de no startup da aplicação
-- **CI/CD** com build, testes e análise estática a cada push
+- **CD e análise estática** no pipeline — a CI de build e testes entra já na
+  etapa 5
