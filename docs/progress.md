@@ -283,7 +283,7 @@ Legenda: `[x]` concluída · `[~]` em andamento · `[ ]` pendente
 - [x] Passo testes unitários
 - [x] Passo testes de arquitetura
 - [x] Passo testes de integração
-- [ ] Executar o pipeline em um Pull Request de teste
+- [x] Executar o pipeline em um Pull Request de teste
 - [ ] Proteger a `master` exigindo CI verde
 
 > O gate rápido roda um passo extra para os testes **sem categoria**: um teste
@@ -295,7 +295,7 @@ Legenda: `[x]` concluída · `[~]` em andamento · `[ ]` pendente
 - [x] `dotnet build` verde
 - [x] `dotnet test` verde
 - [x] `docker compose up -d` sobe todo o ambiente
-- [ ] CI verde em Pull Request
+- [x] CI verde em Pull Request
 - [x] Estrutura idêntica à prevista em [`architecture.md`](./architecture.md) §8
 
 ---
