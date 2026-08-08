@@ -1,0 +1,51 @@
+# Documentação — CashFlow
+
+Documentação do desafio técnico de desenvolvimento de software.
+Solução para gestão de fluxo de caixa de um lojista, com lançamentos de crédito e
+débito e relatório de saldo diário consolidado.
+
+## Índice
+
+| Documento | O que responde |
+|-----------|----------------|
+| [`requirements.md`](./requirements.md) | O que o sistema precisa fazer e por quê — RF, RNF, restrições, premissas e rastreabilidade |
+| [`scope.md`](./scope.md) | O que está e o que **não** está no MVP, com justificativa |
+| [`architecture.md`](./architecture.md) | Como o sistema é estruturado — diagramas, fluxos, comportamento sob falha |
+| [`decisions/`](./decisions/README.md) | Por que cada escolha foi feita — 13 ADRs com alternativas e trade-offs |
+| [`testing-strategy.md`](./testing-strategy.md) | Como a corretude é garantida — TDD, níveis e plano de testes |
+| [`roadmap.md`](./roadmap.md) | Em que ordem o projeto é construído e em que etapa estamos |
+| [`challenge/`](./challenge/) | Enunciado original do desafio |
+
+## Por onde começar
+
+**Para avaliar as decisões técnicas:**
+[`architecture.md`](./architecture.md) → [`decisions/README.md`](./decisions/README.md)
+
+**Para entender o recorte do problema:**
+[`requirements.md`](./requirements.md) → [`scope.md`](./scope.md)
+
+**Para executar o projeto:**
+[`../README.md`](../README.md)
+
+## Resumo da solução em um parágrafo
+
+Dois serviços independentes: um registra lançamentos financeiros, outro fornece o
+saldo diário consolidado. Eles não se comunicam por HTTP — o serviço de lançamentos
+grava o evento em uma tabela de **outbox**, na mesma transação do lançamento, e um
+publisher assíncrono o envia ao **RabbitMQ**. Um worker consome, aplica de forma
+**idempotente** ao saldo do dia e o expõe por uma API própria, com banco próprio.
+O resultado é que a consolidação inteira pode estar fora do ar sem impedir um único
+lançamento, e nenhum evento é perdido — apenas atrasado.
+
+## Estado atual
+
+Fase de **documentação e desenho arquitetural**. Nenhum código de produção foi
+escrito ainda, por decisão registrada em [`roadmap.md`](./roadmap.md).
+
+| Etapa | Status |
+|-------|--------|
+| 1 — Entendimento do desafio | ✅ Concluída |
+| 2 — Mapeamento de requisitos | ✅ Concluída |
+| 3 — Decisões arquiteturais | ✅ Concluída |
+| 4 — Contratos de API e eventos | ⏳ Próxima |
+| 5 a 14 — Implementação | ⬜ Pendente |
