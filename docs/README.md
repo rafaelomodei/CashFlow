@@ -13,8 +13,13 @@ débito e relatório de saldo diário consolidado.
 | [`architecture.md`](./architecture.md) | Como o sistema é estruturado — diagramas, fluxos, comportamento sob falha |
 | [`decisions/`](./decisions/README.md) | Por que cada escolha foi feita — 13 ADRs com alternativas e trade-offs |
 | [`testing-strategy.md`](./testing-strategy.md) | Como a corretude é garantida — TDD, níveis e plano de testes |
-| [`roadmap.md`](./roadmap.md) | Em que ordem o projeto é construído e em que etapa estamos |
+| [`roadmap.md`](./roadmap.md) | Em que ordem o projeto é construído e por que nesta ordem |
+| [`progress.md`](./progress.md) | Onde a execução está agora — checklist detalhado e próximo item |
 | [`challenge/`](./challenge/) | Enunciado original do desafio |
+
+> `roadmap.md` é a visão estratégica; `progress.md` é o backlog executável
+> derivado dela. Quem quer entender a arquitetura lê o primeiro; quem vai
+> implementar o próximo item lê o segundo.
 
 ## Por onde começar
 
@@ -47,5 +52,7 @@ escrito ainda, por decisão registrada em [`roadmap.md`](./roadmap.md).
 | 1 — Entendimento do desafio | ✅ Concluída |
 | 2 — Mapeamento de requisitos | ✅ Concluída |
 | 3 — Decisões arquiteturais | ✅ Concluída |
-| 4 — Contratos de API e eventos | ⏳ Próxima |
+| 4 — Contratos de API e eventos | 🚧 Em andamento |
 | 5 a 14 — Implementação | ⬜ Pendente |
+
+Acompanhamento item a item: [`progress.md`](./progress.md).

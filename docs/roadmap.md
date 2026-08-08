@@ -3,6 +3,10 @@
 > Ordem deliberada de construção do projeto. A documentação vem antes do código
 > por decisão: a arquitetura deste desafio é o que está sendo avaliado, e decidir
 > enquanto se implementa produz justificativa retroativa em vez de decisão.
+>
+> Este documento é a **visão estratégica** — as fases e o porquê da ordem.
+> O detalhamento item a item de cada etapa fica em
+> [`progress.md`](./progress.md), para que esta leitura continue sendo curta.
 
 ## Visão geral
 

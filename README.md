@@ -3,10 +3,27 @@
 Sistema de gestão de fluxo de caixa: registro de lançamentos de crédito e débito
 e relatório de saldo diário consolidado.
 
-> **Estado atual: fase de documentação e desenho arquitetural.**
-> Nenhum código de produção foi escrito ainda — por decisão, não por pendência.
-> As seções marcadas com ⏳ serão preenchidas conforme as etapas do
-> [roadmap](./docs/roadmap.md) avançam.
+---
+
+## Status
+
+**Etapa atual: 4 — Contratos de API e eventos**
+
+```
+✅ Requisitos
+✅ Arquitetura
+🚧 Contratos
+⬜ Implementação
+```
+
+Nenhum código de produção foi escrito ainda — por decisão registrada no
+[roadmap](./docs/roadmap.md), não por pendência. As seções marcadas com ⏳ são
+preenchidas conforme as etapas avançam.
+
+| Visão | Documento |
+|-------|-----------|
+| Estratégica — as 14 etapas e por que nesta ordem | [`docs/roadmap.md`](./docs/roadmap.md) |
+| Execução — checklist detalhado e próximo item | [`docs/progress.md`](./docs/progress.md) |
 
 ---
 
