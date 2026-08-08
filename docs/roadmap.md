@@ -14,7 +14,7 @@
 [✓] Etapa 1  Entendimento do desafio
 [✓] Etapa 2  Mapeamento de requisitos
 [✓] Etapa 3  Decisões arquiteturais (ADRs)
-[ ] Etapa 4  Desenho dos contratos de API e eventos
+[✓] Etapa 4  Desenho dos contratos de API e eventos
 [ ] Etapa 5  Esqueleto da solução, ambiente e CI
 [ ] Etapa 6  Domínio (TDD)
 [ ] Etapa 7  Casos de uso (TDD)
@@ -48,7 +48,7 @@ Registro das decisões com alternativas, consequências e trade-offs.
 
 **Entregue:** [`architecture.md`](./architecture.md), [`decisions/`](./decisions/README.md) (ADR-001 a ADR-013), [`testing-strategy.md`](./testing-strategy.md).
 
-## Etapa 4 — Contratos de API e eventos
+## Etapa 4 — Contratos de API e eventos ✓
 
 Definir antes de implementar, porque o contrato é a fronteira entre os dois
 contextos e mudá-lo depois custa retrabalho dos dois lados.
@@ -58,7 +58,8 @@ contextos e mudá-lo depois custa retrabalho dos dois lados.
 - Envelope e versionamento do evento de integração
 - Especificação OpenAPI
 
-**Saída:** `docs/api-contracts.md`
+**Entregue:** [`api-contracts.md`](./api-contracts.md),
+[ADR-014](./decisions/ADR-014-cursor-pagination.md).
 
 ## Etapa 5 — Esqueleto da solução, ambiente e CI
 

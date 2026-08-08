@@ -88,14 +88,18 @@ O enunciado não diz literalmente “listar lançamentos”, mas pede uma aplica
 *gestão* dos lançamentos financeiros. Para que essa gestão seja minimamente
 utilizável, a consulta faz parte do MVP.
 
-Contrato inicial pretendido:
+Contrato pretendido:
 
 ```
-GET /transactions
+GET /transactions          listagem paginada
+GET /transactions/{id}     lançamento individual — destino do header Location do POST
 ```
 
 Filtros sofisticados (por categoria, por faixa de valor, busca textual) ficam
-fora do escopo. Paginação simples e filtro por período são o teto.
+fora do escopo. Paginação e filtro por período são o teto. A paginação é por
+**cursor**, não por offset — ver [ADR-014](./decisions/ADR-014-cursor-pagination.md).
+
+Contrato completo: [`api-contracts.md`](./api-contracts.md) §2.
 
 ### RF-004 — Consolidar saldo diário
 
@@ -282,6 +286,7 @@ vez de parecer que RabbitMQ e Outbox entraram apenas para sofisticar o projeto.
 | RNF-003/004 Validação | Testes de carga com k6 | [ADR-010](./decisions/ADR-010-performance-validation.md) |
 | RT-001 C# | .NET / C# | [ADR-012](./decisions/ADR-012-tech-stack.md) |
 | RN-001..004 Valores monetários | Value Objects `Money` e `TransactionType` | [ADR-013](./decisions/ADR-013-money-representation.md) |
+| RF-003 Consulta em volume | Paginação por cursor (keyset) | [ADR-014](./decisions/ADR-014-cursor-pagination.md) |
 
 ---
 
@@ -298,6 +303,10 @@ Registradas explicitamente para que a avaliação não confunda decisão com omi
 | P-05 | Lançamento pode ser editado/estornado? | Não no MVP. Lançamentos são imutáveis após criados |
 | P-06 | Lançamento retroativo é permitido? | Sim — a consolidação do dia afetado é recalculada/incrementada |
 | P-07 | Consolidação é histórica ou só do dia atual? | Por data arbitrária; o dia corrente é apenas um caso particular |
+
+As premissas **P-08 a P-10** surgiram na definição dos contratos (etapa 4) e estão
+registradas em [`api-contracts.md`](./api-contracts.md) §6, junto do contrato que
+as originou. Elas resolvem ambiguidades de contrato, não do enunciado.
 
 ---
 

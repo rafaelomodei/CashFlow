@@ -7,7 +7,7 @@
 > Regra de uso: **este arquivo é atualizado no mesmo Pull Request que entrega o
 > item**. Checkbox marcado sem entrega correspondente é ruído, não progresso.
 
-**Etapa atual: 4 — Contratos de API e eventos**
+**Etapa atual: 5 — Esqueleto da solução, ambiente e CI**
 
 ## Progresso macro
 
@@ -15,8 +15,8 @@
 [x] Etapa 1  Entendimento do desafio
 [x] Etapa 2  Mapeamento de requisitos
 [x] Etapa 3  Decisões arquiteturais (ADRs)
-[~] Etapa 4  Contratos de API e eventos
-[ ] Etapa 5  Esqueleto da solução, ambiente e CI
+[x] Etapa 4  Contratos de API e eventos
+[~] Etapa 5  Esqueleto da solução, ambiente e CI
 [ ] Etapa 6  Domínio (TDD)
 [ ] Etapa 7  Casos de uso (TDD)
 [ ] Etapa 8  Infraestrutura de lançamentos
@@ -72,105 +72,124 @@ Legenda: `[x]` concluída · `[~]` em andamento · `[ ]` pendente
 
 ---
 
-## Etapa 4 — Contratos de API e eventos 🚧
+## Etapa 4 — Contratos de API e eventos ✅
 
-> Saída: `docs/api-contracts.md`. Nenhum código nesta etapa — o contrato é a
-> fronteira entre os dois contextos e mudá-lo depois custa retrabalho dos dois lados.
+> Saída: [`api-contracts.md`](./api-contracts.md). Nenhum código nesta etapa — o
+> contrato é a fronteira entre os dois contextos e mudá-lo depois custa retrabalho
+> dos dois lados.
 
 ### Cash Flow API — `POST /transactions`
 
-- [ ] Definir rota e verbo
-- [ ] Definir request DTO
-- [ ] Definir campos obrigatórios e opcionais
-- [ ] Definir representação de `CREDIT` / `DEBIT` (RF-002, RN-002)
-- [ ] Definir representação monetária no contrato (ADR-013, RN-001)
-- [ ] Definir formato de `occurredAt` (ISO 8601 / UTC, premissa P-04)
-- [ ] Definir política para lançamento retroativo (premissa P-06)
-- [ ] Definir resposta `201 Created`
-- [ ] Definir header `Location`
-- [ ] Definir response DTO do recurso criado
-- [ ] Definir erro para `amount` inválido (RN-001)
-- [ ] Definir erro para `type` inválido (RN-002)
-- [ ] Definir erro para `occurredAt` inválido
-- [ ] Definir limite de tamanho de `description`
-- [ ] Criar exemplo de request
-- [ ] Criar exemplo de response
+- [x] Definir rota e verbo
+- [x] Definir request DTO
+- [x] Definir campos obrigatórios e opcionais
+- [x] Definir representação de `CREDIT` / `DEBIT` (RF-002, RN-002)
+- [x] Definir representação monetária no contrato (ADR-013, RN-001)
+- [x] Definir formato de `occurredAt` (ISO 8601 / UTC, premissa P-04)
+- [x] Definir política para lançamento retroativo (premissa P-06) — janela
+      configurável, premissa P-09
+- [x] Definir comportamento com `occurredAt` ausente (premissa P-08)
+- [x] Definir resposta `201 Created`
+- [x] Definir header `Location`
+- [x] Definir response DTO do recurso criado
+- [x] Definir erro para `amount` inválido (RN-001)
+- [x] Definir erro para `type` inválido (RN-002)
+- [x] Definir erro para `occurredAt` inválido
+- [x] Definir limite de tamanho de `description` (premissa P-10)
+- [x] Criar exemplo de request
+- [x] Criar exemplo de response
+
+### Cash Flow API — `GET /transactions/{id}`
+
+> Endpoint incorporado nesta etapa: `201 Created` com header `Location` exige um
+> recurso de destino. Registrado como UC-06 em [`scope.md`](./scope.md).
+
+- [x] Definir rota
+- [x] Definir response DTO (idêntico ao do `POST`)
+- [x] Definir `404` para lançamento inexistente
+- [x] Definir `400` para id fora do formato UUID
 
 ### Cash Flow API — `GET /transactions`
 
-- [ ] Definir rota
-- [ ] Definir estratégia de paginação
-- [ ] Definir parâmetros de paginação e seus limites
-- [ ] Definir filtro `startDate`
-- [ ] Definir filtro `endDate`
-- [ ] Definir ordenação padrão
-- [ ] Definir response DTO da coleção
-- [ ] Definir metadados de paginação na resposta
-- [ ] Definir comportamento sem registros
-- [ ] Definir erro para intervalo de datas inválido
-- [ ] Criar exemplos de request e response
+- [x] Definir rota
+- [x] Definir estratégia de paginação — cursor/keyset ([ADR-014](./decisions/ADR-014-cursor-pagination.md))
+- [x] Definir parâmetros de paginação e seus limites
+- [x] Definir formato e opacidade do cursor
+- [x] Definir filtro `startDate`
+- [x] Definir filtro `endDate`
+- [x] Definir ordenação padrão
+- [x] Definir response DTO da coleção
+- [x] Definir metadados de paginação na resposta
+- [x] Definir comportamento sem registros
+- [x] Definir erro para intervalo de datas inválido
+- [x] Definir erro para cursor inválido
+- [x] Criar exemplos de request e response
 
 ### Consolidation API — `GET /daily-balances/{date}`
 
-- [ ] Definir formato da data no path
-- [ ] Definir response DTO
-- [ ] Definir `totalCredits`
-- [ ] Definir `totalDebits`
-- [ ] Definir `balance` (RF-004)
-- [ ] Definir `updatedAt` como evidência de consistência eventual (ADR-006)
-- [ ] Definir comportamento para dia sem lançamentos
-- [ ] Definir erro para data em formato inválido
-- [ ] Criar exemplos de request e response
+- [x] Definir formato da data no path
+- [x] Definir response DTO
+- [x] Definir `totalCredits`
+- [x] Definir `totalDebits`
+- [x] Definir `balance` (RF-004)
+- [x] Definir `updatedAt` como evidência de consistência eventual (ADR-006)
+- [x] Definir comportamento para dia sem lançamentos
+- [x] Definir erro para data em formato inválido
+- [x] Criar exemplos de request e response
 
 ### Erros HTTP
 
-- [ ] Adotar Problem Details (RFC 7807)
-- [ ] Definir estrutura comum de erro
-- [ ] Definir `400 Bad Request`
-- [ ] Definir formato dos erros de validação campo a campo
-- [ ] Definir `404 Not Found` e quando ele se aplica
-- [ ] Definir `500 Internal Server Error`
-- [ ] Definir `correlationId` no corpo do erro (ADR-011)
-- [ ] Criar exemplo de cada formato de erro
+- [x] Adotar Problem Details (RFC 7807)
+- [x] Definir estrutura comum de erro
+- [x] Definir `400 Bad Request`
+- [x] Definir formato dos erros de validação campo a campo
+- [x] Definir `404 Not Found` e quando ele se aplica
+- [x] Definir `415 Unsupported Media Type`
+- [x] Definir `500 Internal Server Error`
+- [x] Definir `correlationId` no corpo do erro (ADR-011)
+- [x] Criar exemplo de cada formato de erro
 
 ### Evento `TransactionRegistered`
 
-- [ ] Confirmar o nome do evento
-- [ ] Definir versionamento do contrato
-- [ ] Definir `eventId` (base da idempotência — ADR-007)
-- [ ] Definir `eventType`
-- [ ] Definir `occurredAt` do envelope (instante da emissão)
-- [ ] Definir `correlationId` no envelope (ADR-011)
-- [ ] Definir `data.transactionId`
-- [ ] Definir `data.occurredAt` (dia da consolidação — RN-004)
-- [ ] Definir `data.amount`
-- [ ] Definir `data.type`
-- [ ] Definir exemplo JSON completo
-- [ ] Definir política de compatibilidade e evolução do schema
-- [ ] Definir routing key / nome do exchange e da fila (ADR-003)
+- [x] Confirmar o nome do evento
+- [x] Definir versionamento do contrato
+- [x] Definir `eventId` (base da idempotência — ADR-007)
+- [x] Definir `eventType`
+- [x] Definir `occurredAt` do envelope (instante da emissão)
+- [x] Definir `correlationId` no envelope (ADR-011)
+- [x] Definir `data.transactionId`
+- [x] Definir `data.occurredAt` (dia da consolidação — RN-004)
+- [x] Definir `data.amount`
+- [x] Definir `data.type`
+- [x] Definir exemplo JSON completo
+- [x] Definir as propriedades AMQP da mensagem
+- [x] Definir política de compatibilidade e evolução do schema
+- [x] Definir routing key / nome do exchange e da fila (ADR-003)
 
 ### Especificação e documentação
 
-- [ ] Criar `docs/api-contracts.md`
-- [ ] Definir como a especificação OpenAPI será gerada e publicada
-- [ ] Revisar contratos contra [`requirements.md`](./requirements.md)
-- [ ] Revisar contratos contra as ADRs
-- [ ] Revisar contratos contra [`scope.md`](./scope.md)
-- [ ] Atualizar a seção "API" do README
-- [ ] Atualizar o índice em [`docs/README.md`](./README.md)
-- [ ] Atualizar este arquivo
+- [x] Criar [`docs/api-contracts.md`](./api-contracts.md)
+- [x] Registrar [ADR-014](./decisions/ADR-014-cursor-pagination.md) — paginação por cursor
+- [x] Definir como a especificação OpenAPI será gerada e publicada
+- [x] Revisar contratos contra [`requirements.md`](./requirements.md)
+- [x] Revisar contratos contra as ADRs
+- [x] Revisar contratos contra [`scope.md`](./scope.md)
+- [x] Atualizar a seção "API" do README
+- [x] Atualizar o envelope do evento em [`architecture.md`](./architecture.md) §10
+- [x] Atualizar o índice em [`docs/README.md`](./README.md)
+- [x] Atualizar este arquivo
 
 ### Definition of Done da etapa
 
-- [ ] Todos os endpoints do MVP possuem contrato completo
-- [ ] Todos os status HTTP possíveis estão definidos
-- [ ] O evento possui schema estável e versionado
-- [ ] Ambiguidades de contrato foram eliminadas
-- [ ] Nenhuma regra de negócio nova foi inventada nesta etapa
+- [x] Todos os endpoints do MVP possuem contrato completo
+- [x] Todos os status HTTP possíveis estão definidos
+- [x] O evento possui schema estável e versionado
+- [x] Ambiguidades de contrato foram eliminadas
+- [x] Nenhuma regra de negócio nova foi inventada nesta etapa
 
 ---
 
-## Etapa 5 — Esqueleto da solução, ambiente e CI
+## Etapa 5 — Esqueleto da solução, ambiente e CI 🚧
 
 ### Solution e convenções
 
@@ -331,9 +350,19 @@ Legenda: `[x]` concluída · `[~]` em andamento · `[ ]` pendente
 
 ### `ListTransactions` (UC-03)
 
-- [ ] RED: lista com paginação
+- [ ] RED: lista a primeira página sem cursor
+- [ ] RED: continua a partir do cursor sem repetir nem pular registros (ADR-014)
+- [ ] RED: desempata por `id` quando `occurredAt` é idêntico
+- [ ] RED: última página devolve `nextCursor` nulo e `hasMore` falso
+- [ ] RED: cursor inválido é rejeitado
 - [ ] RED: filtra por período
 - [ ] RED: retorna coleção vazia sem erro
+- [ ] GREEN + REFACTOR
+
+### `GetTransaction` (UC-06)
+
+- [ ] RED: retorna o lançamento existente
+- [ ] RED: lançamento inexistente não é erro de aplicação, é ausência
 - [ ] GREEN + REFACTOR
 
 ### `ConsolidateTransaction` (UC-04)
@@ -381,7 +410,9 @@ Legenda: `[x]` concluída · `[~]` em andamento · `[ ]` pendente
 - [ ] Configurar Testcontainers (ADR-008)
 - [ ] Integração: persistência e leitura de lançamento
 - [ ] Integração: precisão de `numeric(18,2)` (ADR-013)
-- [ ] Integração: paginação e filtro por período
+- [ ] Índice `(occurred_at DESC, id DESC)` para a paginação por cursor (ADR-014)
+- [ ] Integração: paginação por cursor e filtro por período
+- [ ] Integração: inserção concorrente não duplica registro entre páginas (ADR-014)
 - [ ] Integração: gravação atômica lançamento + outbox
 - [ ] `ConsolidationDbContext`
 - [ ] Mapeamento de `daily_balances`
@@ -430,9 +461,12 @@ Legenda: `[x]` concluída · `[~]` em andamento · `[ ]` pendente
 
 - [ ] `POST /transactions` conforme contrato
 - [ ] `GET /transactions` conforme contrato
+- [ ] `GET /transactions/{id}` conforme contrato
 - [ ] Validação de entrada
 - [ ] Middleware de exceção → Problem Details
-- [ ] Swagger
+- [ ] Middleware de `correlationId` (ADR-011)
+- [ ] OpenAPI + Swagger UI
+- [ ] Conferir a OpenAPI gerada contra [`api-contracts.md`](./api-contracts.md)
 - [ ] Integração com `WebApplicationFactory`
 
 ### Consolidation API
@@ -440,7 +474,9 @@ Legenda: `[x]` concluída · `[~]` em andamento · `[ ]` pendente
 - [ ] `GET /daily-balances/{date}` conforme contrato
 - [ ] Validação do formato de data
 - [ ] Middleware de exceção → Problem Details
-- [ ] Swagger
+- [ ] Middleware de `correlationId` (ADR-011)
+- [ ] OpenAPI + Swagger UI
+- [ ] Conferir a OpenAPI gerada contra [`api-contracts.md`](./api-contracts.md)
 - [ ] Integração com `WebApplicationFactory`
 
 ### Fluxo ponta a ponta

@@ -68,6 +68,7 @@ docs/                        contexto — requisitos, arquitetura, decisões
 | O que o sistema precisa fazer | [`docs/requirements.md`](./docs/requirements.md) |
 | O que está fora do escopo | [`docs/scope.md`](./docs/scope.md) |
 | Como o sistema é estruturado | [`docs/architecture.md`](./docs/architecture.md) |
+| Qual é o contrato de API e de evento | [`docs/api-contracts.md`](./docs/api-contracts.md) |
 | Por que cada escolha foi feita | [`docs/decisions/`](./docs/decisions/README.md) |
 | Como a corretude é garantida | [`docs/testing-strategy.md`](./docs/testing-strategy.md) |
 | Em que ordem construir | [`docs/roadmap.md`](./docs/roadmap.md) |

@@ -7,12 +7,12 @@ e relatório de saldo diário consolidado.
 
 ## Status
 
-**Etapa atual: 4 — Contratos de API e eventos**
+**Etapa atual: 5 — Esqueleto da solução, ambiente e CI**
 
 ```
 ✅ Requisitos
 ✅ Arquitetura
-🚧 Contratos
+✅ Contratos
 ⬜ Implementação
 ```
 
@@ -130,19 +130,43 @@ docker compose up -d
 
 ## API
 
-⏳ *Etapa 4 do [roadmap](./docs/roadmap.md) — contratos ainda em definição.*
+Contrato completo — DTOs, validações, códigos de erro e schema do evento:
+[`docs/api-contracts.md`](./docs/api-contracts.md).
 
-Endpoints previstos:
+| Método | Rota | Serviço | O que faz |
+|--------|------|---------|-----------|
+| `POST` | `/transactions` | Cash Flow | Registra um lançamento — `201` mesmo com o RabbitMQ fora do ar |
+| `GET` | `/transactions` | Cash Flow | Lista com paginação por cursor e filtro por período |
+| `GET` | `/transactions/{id}` | Cash Flow | Consulta um lançamento |
+| `GET` | `/daily-balances/{date}` | Consolidation | Saldo consolidado do dia |
 
-| Método | Rota | Serviço |
-|--------|------|---------|
-| `POST` | `/transactions` | Cash Flow |
-| `GET` | `/transactions` | Cash Flow |
-| `GET` | `/daily-balances/{date}` | Consolidation |
+A URL base de cada serviço é definida junto do ambiente, na etapa 5.
+
+```bash
+curl -X POST "$CASHFLOW_API/transactions" \
+  -H 'Content-Type: application/json' \
+  -d '{"type":"CREDIT","amount":1500.00,"occurredAt":"2026-08-08T14:30:00Z"}'
+```
+
+```json
+{
+  "date": "2026-08-08",
+  "totalCredits": 1500.00,
+  "totalDebits": 700.00,
+  "balance": 800.00,
+  "updatedAt": "2026-08-08T14:32:15Z"
+}
+```
+
+Erros seguem [Problem Details (RFC 7807)](https://www.rfc-editor.org/rfc/rfc7807),
+sempre com o `correlationId` que permite rastrear a requisição pelos quatro
+processos do fluxo.
+
+⏳ *Especificação OpenAPI gerada do código a partir da etapa 11.*
 
 ## Decisões arquiteturais
 
-13 ADRs documentam contexto, alternativas avaliadas, consequências e trade-offs de
+14 ADRs documentam contexto, alternativas avaliadas, consequências e trade-offs de
 cada escolha: [`docs/decisions/`](./docs/decisions/README.md).
 
 As principais:
