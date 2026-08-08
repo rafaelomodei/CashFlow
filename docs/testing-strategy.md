@@ -78,7 +78,8 @@ três blocos.
 | Criar lançamento válido | Lançamento criado com valor e tipo corretos | RF-001 |
 | Valor zero | Exceção de domínio | RN-001 |
 | Valor negativo | Exceção de domínio | RN-001 |
-| Valor com mais de 2 casas decimais | Normalizado para 2 casas | RN-001 |
+| Valor com mais de 2 casas decimais | Exceção de domínio | RN-001 |
+| Valor com menos de 2 casas decimais | Escala normalizada (`10.5` → `10.50`) | ADR-013 |
 | Tipo inválido | Exceção de domínio | RN-002 |
 | `CREDIT.ApplyTo(100)` | `+100` | RN-003 |
 | `DEBIT.ApplyTo(100)` | `−100` | RN-003 |
