@@ -7,7 +7,7 @@
 > Regra de uso: **este arquivo é atualizado no mesmo Pull Request que entrega o
 > item**. Checkbox marcado sem entrega correspondente é ruído, não progresso.
 
-**Etapa atual: 6 — Domínio (TDD)**
+**Etapa atual: 7 — Casos de uso (TDD)**
 
 ## Progresso macro
 
@@ -17,8 +17,8 @@
 [x] Etapa 3  Decisões arquiteturais (ADRs)
 [x] Etapa 4  Contratos de API e eventos
 [x] Etapa 5  Esqueleto da solução, ambiente e CI
-[~] Etapa 6  Domínio (TDD)
-[ ] Etapa 7  Casos de uso (TDD)
+[x] Etapa 6  Domínio (TDD)
+[~] Etapa 7  Casos de uso (TDD)
 [ ] Etapa 8  Infraestrutura de lançamentos
 [ ] Etapa 9  Mensageria e outbox
 [ ] Etapa 10 Consolidação e idempotência
@@ -307,7 +307,7 @@ Legenda: `[x]` concluída · `[~]` em andamento · `[ ]` pendente
 
 ---
 
-## Etapa 6 — Domínio (TDD) 🚧
+## Etapa 6 — Domínio (TDD) ✅
 
 > Cada contexto tem o seu próprio `Domain`: `Money` e `TransactionType` existem
 > nos dois, sem compartilhamento. `Shared.Contracts` carrega contrato de evento,
@@ -354,15 +354,15 @@ Legenda: `[x]` concluída · `[~]` em andamento · `[ ]` pendente
 - [x] RED: `Amount` obrigatório e positivo
 - [x] RED: `Type` obrigatório e válido
 - [x] RED: `OccurredAt` obrigatório
-- [ ] RED: `OccurredAt` determina o dia da consolidação (RN-004)
+- [x] RED: `OccurredAt` determina o dia da consolidação (RN-004)
 - [x] RED: `Description` opcional
 - [x] RED: imutabilidade após a criação (premissa P-05)
 - [x] GREEN + REFACTOR
 
-> RN-004 fica em aberto de propósito: o lançamento normaliza `OccurredAt` para
-> UTC — e há teste de que 22h em Brasília cai no dia seguinte —, mas quem deriva
-> o **dia** é o `DailyBalance`, no contexto de consolidação. O item fecha lá, com
-> o código que de fato faz a derivação.
+> RN-004 é atendida em duas partes: o lançamento normaliza `OccurredAt` para UTC,
+> e `DailyBalance.DayOf` deriva o dia dessa data. Os dois lados têm o mesmo teste
+> — 22h em Brasília pertence ao dia seguinte —, de modo que a limitação de fuso
+> aceita pela ADR-013 fique exercitada, e não apenas descrita.
 >
 > A janela de retroatividade (premissa P-09) não está no domínio: seus limites
 > são configuráveis, e configuração não pertence a uma entidade. Ela é validação
@@ -370,29 +370,42 @@ Legenda: `[x]` concluída · `[~]` em andamento · `[ ]` pendente
 
 ### `DailyBalance`
 
-- [ ] RED: saldo = créditos − débitos (RF-004)
-- [ ] RED: aplicar crédito
-- [ ] RED: aplicar débito
-- [ ] RED: saldo pode ser negativo
-- [ ] RED: dia sem lançamentos
-- [ ] GREEN + REFACTOR
+- [x] RED: saldo = créditos − débitos (RF-004)
+- [x] RED: aplicar crédito
+- [x] RED: aplicar débito
+- [x] RED: saldo pode ser negativo
+- [x] RED: dia sem lançamentos
+- [x] GREEN + REFACTOR
+
+> `Balance` é derivado dos dois totais em vez de armazenado: um campo a mais
+> significaria um campo a mais para divergir dos números que o originaram.
+>
+> Dia sem lançamentos é `DailyBalance.Empty` — totais zerados e `UpdatedAt` nulo,
+> não ausência de registro. É o que permite à consulta responder `200` e nunca
+> `404` ([ADR-006](./decisions/ADR-006-consistency.md)), sem o cliente precisar
+> traduzir "não encontrado" para "zero".
+>
+> O `Money` da consolidação aceita zero e negativo, ao contrário do `Money` de
+> lançamentos: aqui ele mede totais e saldo, e um dia pode legitimamente fechar
+> negativo. A regra de valor positivo (RN-001) é do lançamento, e é cobrada em
+> `Apply` — evento com valor não positivo corromperia o total em silêncio.
 
 ### Exceções de domínio
 
-- [ ] Definir hierarquia de exceções de domínio
-- [ ] Testar mensagem e tipo de cada violação de regra
+- [x] Definir hierarquia de exceções de domínio
+- [x] Testar mensagem e tipo de cada violação de regra
 
-> Raiz `DomainException` criada no contexto de lançamentos, com uma exceção por
-> regra violada (valor, tipo, data, descrição) e mensagem verificada em teste. Os
-> itens fecham quando a consolidação tiver a sua — a hierarquia é por contexto,
-> como o resto do domínio.
+> Uma raiz `DomainException` por contexto, com uma exceção por regra violada. A
+> borda HTTP (etapa 11) precisa distinguir violação de regra — `400` — de falha
+> do servidor — `500` — sem conhecer cada regra individualmente; é a raiz que
+> torna isso possível.
 
 ### Definition of Done da etapa
 
-- [ ] RN-001 a RN-004 cobertas por teste
-- [ ] Nenhum teste de domínio depende de I/O
-- [ ] Testes de arquitetura continuam verdes
-- [ ] CI verde
+- [x] RN-001 a RN-004 cobertas por teste
+- [x] Nenhum teste de domínio depende de I/O
+- [x] Testes de arquitetura continuam verdes
+- [x] CI verde
 
 ---
 
