@@ -1,0 +1,38 @@
+# Build
+bin/
+obj/
+out/
+[Dd]ebug/
+[Rr]elease/
+artifacts/
+TestResults/
+*.user
+*.suo
+
+# Cobertura de testes
+coverage/
+*.coverage
+*.cobertura.xml
+*.opencover.xml
+
+# IDEs
+.vs/
+.vscode/
+.idea/
+*.swp
+
+# Ambiente
+.env
+.env.*
+!.env.example
+
+# SO
+.DS_Store
+Thumbs.db
+
+# k6
+k6/results/
+
+# Ferramentas de IA (estado local)
+.claude/settings.local.json
+.claude/sessions/
