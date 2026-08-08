@@ -7,7 +7,7 @@
 > Regra de uso: **este arquivo é atualizado no mesmo Pull Request que entrega o
 > item**. Checkbox marcado sem entrega correspondente é ruído, não progresso.
 
-**Etapa atual: 5 — Esqueleto da solução, ambiente e CI**
+**Etapa atual: 6 — Domínio (TDD)**
 
 ## Progresso macro
 
@@ -16,8 +16,8 @@
 [x] Etapa 2  Mapeamento de requisitos
 [x] Etapa 3  Decisões arquiteturais (ADRs)
 [x] Etapa 4  Contratos de API e eventos
-[~] Etapa 5  Esqueleto da solução, ambiente e CI
-[ ] Etapa 6  Domínio (TDD)
+[x] Etapa 5  Esqueleto da solução, ambiente e CI
+[~] Etapa 6  Domínio (TDD)
 [ ] Etapa 7  Casos de uso (TDD)
 [ ] Etapa 8  Infraestrutura de lançamentos
 [ ] Etapa 9  Mensageria e outbox
@@ -189,7 +189,7 @@ Legenda: `[x]` concluída · `[~]` em andamento · `[ ]` pendente
 
 ---
 
-## Etapa 5 — Esqueleto da solução, ambiente e CI 🚧
+## Etapa 5 — Esqueleto da solução, ambiente e CI ✅
 
 ### Solution e convenções
 
@@ -284,11 +284,18 @@ Legenda: `[x]` concluída · `[~]` em andamento · `[ ]` pendente
 - [x] Passo testes de arquitetura
 - [x] Passo testes de integração
 - [x] Executar o pipeline em um Pull Request de teste
-- [ ] Proteger a `master` exigindo CI verde
+- [x] Proteger a `master` exigindo CI verde
 
 > O gate rápido roda um passo extra para os testes **sem categoria**: um teste
 > que esqueça o `[Trait]` não cairia em nenhum filtro e seria ignorado sem
 > ninguém perceber. Lacuna silenciosa é pior que teste vermelho.
+>
+> A `master` exige Pull Request, ambos os jobs de CI verdes sobre a versão mais
+> recente da base (`strict`), conversas resolvidas, e recusa push direto,
+> force-push e exclusão da branch. A aprovação obrigatória ficou em zero: em
+> repositório de autor único, o GitHub não permite aprovar o próprio Pull
+> Request, e exigir revisão tornaria todo merge impossível — a regra deixaria de
+> proteger e passaria a travar.
 
 ### Definition of Done da etapa
 
