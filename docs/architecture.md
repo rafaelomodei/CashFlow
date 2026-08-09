@@ -231,7 +231,6 @@ daily_balances
 ├── date               date PK
 ├── total_credits      numeric(18,2)
 ├── total_debits       numeric(18,2)
-├── balance            numeric(18,2)
 └── updated_at         timestamptz
 
 processed_events
@@ -239,9 +238,27 @@ processed_events
 └── processed_at       timestamptz
 ```
 
+Não há coluna `balance`: o saldo é a diferença entre os dois totais, calculada na
+leitura. Uma terceira coluna seria uma terceira coisa para divergir das duas que a
+originaram.
+
 `processed_events` é o mecanismo de idempotência: a chave primária transforma o
 reprocessamento em uma violação de unicidade detectável, em vez de uma soma
 duplicada. Ver [ADR-007](./decisions/ADR-007-idempotency.md).
+
+### Aplicação das migrations
+
+Cada serviço aplica as migrations do **seu** banco na inicialização
+(`Database.Migrate()`), de modo que `docker compose up -d` em um clone limpo
+produza um sistema funcional sem passo manual — o critério de aceite da etapa 14.
+A Cash Flow API cuida do `cashflow_db`; a Consolidation API, do
+`consolidation_db`. O worker não aplica nada: dois processos migrando o mesmo
+banco ao subir juntos é corrida sem ganho.
+
+Migrar no startup é adequado a um ambiente de avaliação e inadequado a produção,
+onde o passo pertence ao deploy — registrado como melhoria futura no README. A
+composição que executa isso entra na etapa 11, junto do resto do *composition
+root*.
 
 ## 10. Contrato do evento de integração
 
