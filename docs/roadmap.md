@@ -15,10 +15,10 @@
 [✓] Etapa 2  Mapeamento de requisitos
 [✓] Etapa 3  Decisões arquiteturais (ADRs)
 [✓] Etapa 4  Desenho dos contratos de API e eventos
-[ ] Etapa 5  Esqueleto da solução, ambiente e CI
-[ ] Etapa 6  Domínio (TDD)
-[ ] Etapa 7  Casos de uso (TDD)
-[ ] Etapa 8  Infraestrutura de lançamentos
+[✓] Etapa 5  Esqueleto da solução, ambiente e CI
+[✓] Etapa 6  Domínio (TDD)
+[✓] Etapa 7  Casos de uso (TDD)
+[~] Etapa 8  Infraestrutura de lançamentos
 [ ] Etapa 9  Mensageria e outbox
 [ ] Etapa 10 Consolidação e idempotência
 [ ] Etapa 11 APIs HTTP
@@ -26,6 +26,9 @@
 [ ] Etapa 13 Testes de carga
 [ ] Etapa 14 README final e revisão
 ```
+
+Legenda: `[✓]` concluída · `[~]` em andamento · `[ ]` pendente. O detalhamento
+item a item está em [`progress.md`](./progress.md).
 
 ---
 
@@ -61,7 +64,7 @@ contextos e mudá-lo depois custa retrabalho dos dois lados.
 **Entregue:** [`api-contracts.md`](./api-contracts.md),
 [ADR-014](./decisions/ADR-014-cursor-pagination.md).
 
-## Etapa 5 — Esqueleto da solução, ambiente e CI
+## Etapa 5 — Esqueleto da solução, ambiente e CI ✓
 
 ```
 .github/
@@ -93,7 +96,7 @@ que não é executado automaticamente é intenção, não garantia.
 **Critério:** `dotnet build` e `docker compose up -d` funcionam, e o pipeline roda
 verde em um Pull Request de teste.
 
-## Etapa 6 — Domínio (TDD)
+## Etapa 6 — Domínio (TDD) ✓
 
 - `Money`, `TransactionType`, `Transaction`
 - `DailyBalance`
@@ -101,7 +104,7 @@ verde em um Pull Request de teste.
 
 **Critério:** todas as regras RN-001 a RN-004 cobertas; nenhum teste precisa de I/O.
 
-## Etapa 7 — Casos de uso (TDD)
+## Etapa 7 — Casos de uso (TDD) ✓
 
 - `RegisterTransaction`, `ListTransactions`
 - `ConsolidateTransaction`, `GetDailyBalance`
@@ -110,7 +113,7 @@ verde em um Pull Request de teste.
 
 **Critério:** casos de uso testados com dublês; nenhuma dependência de infraestrutura.
 
-## Etapa 8 — Infraestrutura de lançamentos
+## Etapa 8 — Infraestrutura de lançamentos (em andamento)
 
 - `DbContext`, mapeamentos, migrations
 - Repositórios sobre PostgreSQL
@@ -140,12 +143,11 @@ demonstrável.
 - Consumidor com ack manual
 - `processed_events` e transação única
 - Upsert atômico do saldo diário
-- **Especificar o mecanismo concreto de retry** antes de implementá-lo
+- Retry in-process com espera limitada, e DLQ ao esgotar as tentativas
 
-O item de retry é o que exige mais cuidado nesta etapa. `nack` com `requeue=true`
-não produz backoff: a mensagem volta para a frente da fila e é reentregue de
-imediato, criando um laço quente entre falha e reentrega. O desenho precisa
-definir explicitamente:
+`nack` com `requeue=true` não produz backoff: a mensagem volta para a frente da
+fila e é reentregue de imediato, criando um laço quente entre falha e reentrega.
+O backoff precisa vir de um mecanismo explícito:
 
 ```
 erro transitório  →  retry controlado (com espera real entre tentativas)
@@ -155,10 +157,13 @@ erro transitório  →  retry controlado (com espera real entre tentativas)
                          DLQ
 ```
 
-Alternativas a avaliar na etapa: fila de retry com TTL + dead-letter exchange
-(delay queues), contagem de tentativas via header (`x-death`), ou retry
-in-process com espera limitada antes do `nack`. A escolha e o motivo entram em
-[ADR-003](./decisions/ADR-003-messaging.md).
+Entre os três mecanismos que a [ADR-003](./decisions/ADR-003-messaging.md) deixou
+em aberto, vale o mais simples: **retry in-process com espera limitada**, seguido
+de `nack(requeue=false)` para a DLQ. Ele não exige topologia extra e prova as três
+coisas que precisam ser provadas — mensagem não some, mensagem repetida não
+duplica saldo, mensagem problemática não trava a fila. Fila de retry com TTL e
+leitura de `x-death` resolveriam o mesmo com mais peças. O motivo é registrado na
+ADR-003 quando o consumidor for implementado.
 
 **Critério:** mesmo evento publicado N vezes altera o saldo uma única vez, e uma
 mensagem que falha sempre chega à DLQ em tempo finito, sem laço quente.
@@ -173,7 +178,7 @@ mensagem que falha sempre chega à DLQ em tempo finito, sem laço quente.
 
 ## Etapa 12 — Resiliência e observabilidade
 
-- Serilog estruturado e correlation id ponta a ponta
+- `ILogger` com saída JSON estruturada e correlation id ponta a ponta
 - Health checks `live` e `ready`
 - Cenários de falha executados e documentados
 
@@ -182,10 +187,17 @@ mensagem que falha sempre chega à DLQ em tempo finito, sem laço quente.
 
 ## Etapa 13 — Testes de carga
 
-- Cenários k6 conforme [ADR-010](./decisions/ADR-010-performance-validation.md)
+- Um cenário k6 obrigatório: 50 req/s em `GET /daily-balances/{date}`
 - Execução, coleta e registro dos resultados
 
-**Critério:** 50 req/s com erro < 1% e perda de eventos igual a zero.
+"50 chamadas por segundo" é ambíguo no enunciado. Em vez de cobrir as três
+leituras possíveis ([ADR-010](./decisions/ADR-010-performance-validation.md)),
+provamos bem a principal — a consolidação sob carga — e registramos a ambiguidade
+no README. A convergência ponta a ponta é provada por teste funcional na etapa 11,
+que não precisa de carga para ser convincente. Carga de escrita e de ingestão são
+extras, executados se sobrar tempo.
+
+**Critério:** 50 req/s com erro < 1%.
 
 ## Etapa 14 — README final e revisão
 
