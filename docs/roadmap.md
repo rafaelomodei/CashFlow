@@ -23,7 +23,7 @@
 [✓] Etapa 10 Consolidação e idempotência
 [✓] Etapa 11 APIs HTTP
 [✓] Etapa 12 Resiliência e observabilidade
-[ ] Etapa 13 Testes de carga
+[✓] Etapa 13 Testes de carga
 [ ] Etapa 14 README final e revisão
 ```
 
@@ -185,7 +185,7 @@ mensagem que falha sempre chega à DLQ em tempo finito, sem laço quente.
 **Critério:** a tabela de comportamento sob falha de [`architecture.md`](./architecture.md) §6
 é reproduzida na prática.
 
-## Etapa 13 — Testes de carga
+## Etapa 13 — Testes de carga ✓
 
 - Um cenário k6 obrigatório: 50 req/s em `GET /daily-balances/{date}`
 - Execução, coleta e registro dos resultados
