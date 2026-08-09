@@ -409,42 +409,76 @@ Legenda: `[x]` concluída · `[~]` em andamento · `[ ]` pendente
 
 ---
 
-## Etapa 7 — Casos de uso (TDD)
+## Etapa 7 — Casos de uso (TDD) 🚧
+
+> Casos de uso sinalizam falha por **exceção** e ausência por **retorno nulável**.
+> Violação de regra sobe como `DomainException` e vira `400` no middleware da
+> etapa 11; parâmetro de consulta fora do contrato sobe como `InvalidQueryException`.
+> A alternativa — `Result<T>` em todo handler — obrigaria cada caso de uso a
+> capturar o que o domínio acabou de sinalizar, só para reembalar. A linha
+> "Result pattern" da matriz de RNF-011 em [`requirements.md`](./requirements.md)
+> foi corrigida para descrever o que existe.
 
 ### Portas
 
-- [ ] `ITransactionRepository`
-- [ ] `IOutboxRepository`
-- [ ] `IEventPublisher`
+- [x] `ITransactionRepository`
+- [x] `IOutboxRepository`
+- [x] `IEventPublisher`
 - [ ] `IDailyBalanceRepository`
 - [ ] `IProcessedEventRepository`
-- [ ] `IUnitOfWork` (ou equivalente para atomicidade)
+- [x] `IUnitOfWork` (ou equivalente para atomicidade)
+
+> `IUnitOfWork` é por contexto, como o resto: o da consolidação nasce com o seu
+> caso de uso. Cada porta apareceu quando um teste precisou dela — `ListAsync` e
+> `GetByIdAsync` só entraram em `ITransactionRepository` nos casos de uso que as
+> exigiram, e não junto com `AddAsync`.
 
 ### `RegisterTransaction` (UC-01)
 
-- [ ] RED: registra lançamento válido
-- [ ] RED: grava lançamento e evento na mesma transação (ADR-004)
-- [ ] RED: rejeita valor inválido
-- [ ] RED: rejeita tipo inválido
-- [ ] RED: não depende da disponibilidade do broker (RNF-001)
-- [ ] GREEN + REFACTOR
+- [x] RED: registra lançamento válido
+- [x] RED: grava lançamento e evento na mesma transação (ADR-004)
+- [x] RED: rejeita valor inválido
+- [x] RED: rejeita tipo inválido
+- [x] RED: não depende da disponibilidade do broker (RNF-001)
+- [x] GREEN + REFACTOR
+
+> RNF-001 é verificada pela **ausência da dependência**: um teste falha se
+> `IEventPublisher` aparecer no construtor do caso de uso. Teste de comportamento
+> provaria que o broker não é chamado hoje; este prova que não há por onde chamar.
+>
+> O payload gravado no outbox é conferido campo a campo contra
+> [`api-contracts.md`](./api-contracts.md) §5, incluindo a distinção entre o
+> `occurredAt` do envelope (emissão) e o de `data` (fato econômico) — o ponto
+> mais fácil de errar do contrato, e o único que produziria saldo errado sem
+> falhar em lugar nenhum.
+>
+> O instante do servidor quando `occurredAt` é omitido (premissa P-08) ficou no
+> caso de uso, e não na borda HTTP: é política de aplicação, não de transporte.
 
 ### `ListTransactions` (UC-03)
 
-- [ ] RED: lista a primeira página sem cursor
-- [ ] RED: continua a partir do cursor sem repetir nem pular registros (ADR-014)
-- [ ] RED: desempata por `id` quando `occurredAt` é idêntico
-- [ ] RED: última página devolve `nextCursor` nulo e `hasMore` falso
-- [ ] RED: cursor inválido é rejeitado
-- [ ] RED: filtra por período
-- [ ] RED: retorna coleção vazia sem erro
-- [ ] GREEN + REFACTOR
+- [x] RED: lista a primeira página sem cursor
+- [x] RED: continua a partir do cursor sem repetir nem pular registros (ADR-014)
+- [x] RED: desempata por `id` quando `occurredAt` é idêntico
+- [x] RED: última página devolve `nextCursor` nulo e `hasMore` falso
+- [x] RED: cursor inválido é rejeitado
+- [x] RED: filtra por período
+- [x] RED: retorna coleção vazia sem erro
+- [x] GREEN + REFACTOR
+
+> A consulta pede `limit + 1` registros ao repositório. É o que distingue "a
+> página encheu" de "acabou" sem custar um `COUNT(*)` — o custo O(n) que a
+> paginação por cursor existe para evitar.
+>
+> `limit` fora de `[1, 200]`, período invertido e cursor ilegível são validados
+> aqui, e não só na borda HTTP: o `400` da etapa 11 vira eco de uma regra única,
+> como já acontece com `Money`.
 
 ### `GetTransaction` (UC-06)
 
-- [ ] RED: retorna o lançamento existente
-- [ ] RED: lançamento inexistente não é erro de aplicação, é ausência
-- [ ] GREEN + REFACTOR
+- [x] RED: retorna o lançamento existente
+- [x] RED: lançamento inexistente não é erro de aplicação, é ausência
+- [x] GREEN + REFACTOR
 
 ### `ConsolidateTransaction` (UC-04)
 
@@ -464,11 +498,16 @@ Legenda: `[x]` concluída · `[~]` em andamento · `[ ]` pendente
 
 ### `PublishPendingOutboxMessages` (UC-05)
 
-- [ ] RED: publica mensagens pendentes
-- [ ] RED: marca como processada após confirmação
-- [ ] RED: falha de publicação mantém a mensagem pendente (RNF-007)
-- [ ] RED: incrementa tentativas e registra erro
-- [ ] GREEN + REFACTOR
+- [x] RED: publica mensagens pendentes
+- [x] RED: marca como processada após confirmação
+- [x] RED: falha de publicação mantém a mensagem pendente (RNF-007)
+- [x] RED: incrementa tentativas e registra erro
+- [x] GREEN + REFACTOR
+
+> Uma mensagem que falha não interrompe o lote, e o `SaveChanges` acontece uma
+> vez ao fim: publicação confirmada seguida de falha ao gravar faz a mensagem ser
+> republicada depois, o que a entrega *at-least-once* já prevê e a idempotência
+> do consumidor absorve ([ADR-007](./decisions/ADR-007-idempotency.md)).
 
 ### Definition of Done da etapa
 
