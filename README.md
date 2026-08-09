@@ -106,6 +106,8 @@ graph TD
 | Carga | k6 | [ADR-010](./docs/decisions/ADR-010-performance-validation.md) |
 | Logs | `ILogger` + JSON console | [ADR-011](./docs/decisions/ADR-011-observability.md) |
 | Ambiente | Docker + Docker Compose | [ADR-009](./docs/decisions/ADR-009-containers.md) |
+| Frontend | React 19, TypeScript, Vite, Tailwind CSS, TanStack Query | [ADR-015](./docs/decisions/ADR-015-frontend.md) |
+| Testes de frontend | Vitest + Testing Library | [ADR-015](./docs/decisions/ADR-015-frontend.md) |
 | CI | GitHub Actions | [`testing-strategy.md`](./docs/testing-strategy.md#integração-contínua) |
 
 ## Estrutura do projeto
@@ -113,7 +115,7 @@ graph TD
 ```
 docs/                  documentação, ADRs e enunciado
 .github/workflows/     pipeline de CI
-src/                   código-fonte
+src/                   código-fonte (inclui `src/Frontend/`)
 tests/                 testes automatizados
 k6/                    testes de carga
 docker-compose.yml     ambiente local
@@ -133,6 +135,7 @@ docker compose up -d
 
 | Serviço | Endereço |
 |---------|----------|
+| **Interface** | **http://localhost:3000** |
 | Cash Flow API | http://localhost:5001 |
 | Consolidation API | http://localhost:5002 |
 | RabbitMQ (management) | http://localhost:15672 |
@@ -141,7 +144,7 @@ docker compose up -d
 
 Para reiniciar do zero: `docker compose down -v && docker compose up -d`.
 
-O ambiente completo ocioso consome cerca de 240 MiB somando os seis containers.
+O ambiente completo ocioso consome cerca de 240 MiB somando os sete containers.
 
 As duas APIs expõem Swagger UI em `/swagger` e a especificação OpenAPI em
 `/openapi/v1.json` fora de produção. As migrations são aplicadas na inicialização,
@@ -154,6 +157,13 @@ dotnet test                                   # suíte completa
 dotnet test --filter Category=Unit            # unitários, sem Docker
 dotnet test --filter Category=Architecture    # fronteiras de camada
 dotnet test --filter Category=Integration     # exige Docker
+```
+
+```bash
+cd src/Frontend
+npm ci
+npm run test                                  # Vitest + Testing Library
+npm run build                                 # `tsc --noEmit` + bundle
 ```
 
 ## API
@@ -195,7 +205,7 @@ teste de integração — divergência entre os dois é defeito, não evolução
 
 ## Decisões arquiteturais
 
-14 ADRs documentam contexto, alternativas avaliadas, consequências e trade-offs de
+15 ADRs documentam contexto, alternativas avaliadas, consequências e trade-offs de
 cada escolha: [`docs/decisions/`](./docs/decisions/README.md).
 
 As principais:
@@ -204,6 +214,77 @@ As principais:
 - [ADR-002](./docs/decisions/ADR-002-service-decomposition.md) — Dois serviços independentes
 - [ADR-004](./docs/decisions/ADR-004-transactional-outbox.md) — Transactional Outbox
 - [ADR-007](./docs/decisions/ADR-007-idempotency.md) — Idempotência no consumidor
+- [ADR-015](./docs/decisions/ADR-015-frontend.md) — Frontend de demonstração
+
+## Interface
+
+Uma tela, em `http://localhost:3000`, consumindo os endpoints que já existem
+([ADR-015](./docs/decisions/ADR-015-frontend.md)). Ela **não implementa requisito
+algum** — existe porque as duas propriedades mais importantes do sistema são
+também as duas mais fáceis de confundir com defeito quando só existem como JSON:
+
+| O que a tela mostra | O que isso demonstra |
+|---------------------|----------------------|
+| O saldo converge sozinho segundos após o lançamento, com "atualizado há N s" ao lado | Consistência eventual ([ADR-006](./docs/decisions/ADR-006-consistency.md)) é arquitetura, não bug |
+| Com a Consolidation API parada, o card de saldo mostra erro e o formulário continua registrando | Degradação parcial (RNF-001) |
+| Dia sem movimentação exibe `R$ 0,00`, e período sem lançamentos exibe estado vazio | Ausência é resultado, nunca `404` |
+| `400` de validação aparece campo a campo; `500` mostra o `correlationId` | Problem Details e rastreabilidade ([ADR-011](./docs/decisions/ADR-011-observability.md)) |
+
+### Regra de contenção
+
+A tela é uma vitrine, e quatro restrições a mantêm assim:
+
+1. **Nenhuma regra de negócio.** Ela exibe o que a API respondeu.
+2. **Nunca soma dinheiro.** Os três totais vêm prontos de
+   `GET /daily-balances/{date}`. `number` em JavaScript é ponto flutuante binário
+   — somar `amount` no cliente produziria centavos divergentes do `numeric(18,2)`
+   do backend, e o número errado seria o que o usuário vê.
+3. **Nenhum endpoint novo, nenhuma mudança de contrato.** Não há filtro por tipo
+   porque a API não oferece: filtrá-lo no cliente sobre uma lista paginada por
+   cursor mostraria "apenas créditos" das páginas já carregadas, e um filtro que
+   mente é pior que um filtro ausente.
+4. **Nenhuma camada de servidor própria.** O nginx encaminha; não transforma,
+   não agrega e não decide.
+
+### Mesma origem, em vez de CORS
+
+```
+browser :3000
+   ├── /api/cashflow/*        → cashflow-api:8080
+   └── /api/consolidation/*   → consolidation-api:8080
+```
+
+O browser nunca aprende o endereço de nenhum serviço: não há `VITE_*_API_URL` no
+bundle e **nenhuma das duas APIs precisou de CORS**. O `server.proxy` do Vite
+reproduz os mesmos caminhos em desenvolvimento, então o código que chama
+`/api/cashflow/transactions` é idêntico em `npm run dev` e em produção.
+
+Isto é um reverse proxy, não um BFF: `nginx.conf` tem duas diretivas
+`proxy_pass` e nenhuma linha de lógica. Agregar as duas APIs em uma resposta só
+recriaria o acoplamento síncrono que [ADR-002](./docs/decisions/ADR-002-service-decomposition.md)
+existe para impedir.
+
+### Design system
+
+Interface **inspirada na identidade visual pública da Verity** — não uma cópia do
+Design System deles, que não é público. Os tokens foram extraídos por inspeção de
+`verity.com.br`: azul `#0041FF`, navy `#1A1086`, tipografia **Poppins** e botões
+totalmente arredondados. Vivem em `src/Frontend/src/styles/globals.css` e o
+Tailwind os consome como fonte única.
+
+As cores semânticas (crédito / débito) são **derivação nossa**, declaradas como
+tal no arquivo de tokens: o site da Verity não publica paleta semântica. Todos os
+pares texto/fundo atingem contraste AA.
+
+### Verificações
+
+```bash
+# Nenhum endereço de serviço no bundle
+grep -r "5001\|5002" src/Frontend/dist/     # sem resultado
+
+# Nenhuma API precisou de CORS
+grep -rn "AddCors" --include="*.cs" src      # sem resultado
+```
 
 ## Consistência dos dados
 

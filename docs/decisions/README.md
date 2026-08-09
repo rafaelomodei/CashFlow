@@ -25,6 +25,7 @@ com um documento, e não com "foi assim que decidimos".
 | [ADR-012](./ADR-012-tech-stack.md) | Stack técnica: .NET 10 e ASP.NET Core | Aceito | RT-001 |
 | [ADR-013](./ADR-013-money-representation.md) | Representação de valores monetários e tipo de lançamento | Aceito | RN-001..004 |
 | [ADR-014](./ADR-014-cursor-pagination.md) | Paginação por cursor (keyset) na listagem de lançamentos | Aceito | RF-003 |
+| [ADR-015](./ADR-015-frontend.md) | Frontend de demonstração: React, Vite e reverse proxy | Aceito | — (torna RNF-001 e RNF-006 observáveis) |
 
 Template para novas decisões: [ADR-000](./ADR-000-template.md).
 
@@ -50,6 +51,9 @@ graph TD
     A12["ADR-012<br/>stack .NET"] --> A13["ADR-013<br/>Money e TransactionType"]
     RF003["RF-003<br/>consultar lançamentos"] --> A14["ADR-014<br/>paginação por cursor"]
     A5 --> A14
+    A6 --> A15["ADR-015<br/>frontend de demonstração"]
+    A2 --> A15
+    A14 --> A15
 ```
 
 Leitura do grafo: **tudo à direita de RNF-001 existe por causa dele**. Removido o
@@ -62,6 +66,11 @@ TDD pressiona por fronteiras limpas). ADR-012 e ADR-013 são consequência da
 restrição de linguagem e da natureza financeira do domínio, independentes do resto.
 ADR-014 é a única decisão originada de um requisito **funcional**, e não de
 RNF-001: ela existe porque RF-003 precisa ser consultável em volume.
+
+ADR-015 é a única que **não implementa** requisito nenhum. Ela aponta para
+ADR-002, ADR-006 e ADR-014 porque não decide nada sobre elas — ela as torna
+visíveis. Removida, o sistema continua idêntico; o que se perde é a capacidade de
+demonstrar a degradação parcial e a consistência eventual sem `curl`.
 
 ## Quando criar uma nova ADR
 

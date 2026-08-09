@@ -12,7 +12,7 @@ débito e relatório de saldo diário consolidado.
 | [`scope.md`](./scope.md) | O que está e o que **não** está no MVP, com justificativa |
 | [`architecture.md`](./architecture.md) | Como o sistema é estruturado — diagramas, fluxos, comportamento sob falha |
 | [`api-contracts.md`](./api-contracts.md) | Qual é o contrato exato — endpoints, DTOs, erros e o schema do evento |
-| [`decisions/`](./decisions/README.md) | Por que cada escolha foi feita — 14 ADRs com alternativas e trade-offs |
+| [`decisions/`](./decisions/README.md) | Por que cada escolha foi feita — 15 ADRs com alternativas e trade-offs |
 | [`testing-strategy.md`](./testing-strategy.md) | Como a corretude é garantida — TDD, níveis e plano de testes |
 | [`roadmap.md`](./roadmap.md) | Em que ordem o projeto é construído e por que nesta ordem |
 | [`progress.md`](./progress.md) | Onde a execução está agora — checklist detalhado e próximo item |
