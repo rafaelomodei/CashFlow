@@ -872,7 +872,7 @@ Extras, apenas se sobrar tempo:
 - [x] Com o worker parado, o card informa atraso em tempo finito
 - [x] Nenhuma soma de valor monetário no cliente
 - [x] Nenhuma mudança em contrato, endpoint ou regra de domínio
-- [ ] CI verde, incluindo os jobs .NET existentes — só verificável no Pull Request
+- [x] CI verde, incluindo os jobs .NET existentes — Pull Request #20, três jobs
 
 > **Verificações executadas no ambiente real**, e não apenas por teste:
 >
