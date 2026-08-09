@@ -191,15 +191,22 @@ src/
 tests/
 ├── *.UnitTests/                      domínio e aplicação
 ├── *.IntegrationTests/               banco, fila, endpoints
+├── EndToEndTests/                    o sistema inteiro, os dois contextos juntos
 └── ArchitectureTests/                fronteiras de camada
 k6/                                   testes de carga
 docs/                                 esta documentação
 .github/workflows/                    pipeline de CI
 ```
 
-`Shared.Contracts` contém **apenas** os contratos dos eventos de integração —
-nada de regra de negócio. É o único acoplamento aceito entre os dois contextos, e
-é um acoplamento de esquema, não de código executável.
+`Shared.Contracts` contém **apenas** os contratos dos eventos de integração e os
+nomes da topologia que os transporta — nada de regra de negócio. É o único
+acoplamento aceito entre os dois contextos, e é um acoplamento de esquema, não de
+código executável.
+
+`EndToEndTests` é o único projeto que referencia os dois contextos. Ele existe
+para verificar a integração entre eles, que por definição não cabe em nenhum dos
+dois lados — e é por isso que os projetos de produção continuam sem se
+referenciar, o que os testes de arquitetura garantem.
 
 ## 9. Modelo de dados
 

@@ -7,7 +7,7 @@
 > Regra de uso: **este arquivo é atualizado no mesmo Pull Request que entrega o
 > item**. Checkbox marcado sem entrega correspondente é ruído, não progresso.
 
-**Etapa atual: 11 — APIs HTTP**
+**Etapa atual: 12 — Resiliência e observabilidade**
 
 ## Progresso macro
 
@@ -22,7 +22,7 @@
 [x] Etapa 8  Infraestrutura de lançamentos
 [x] Etapa 9  Mensageria e outbox
 [x] Etapa 10 Consolidação e idempotência
-[ ] Etapa 11 APIs HTTP
+[x] Etapa 11 APIs HTTP
 [ ] Etapa 12 Resiliência e observabilidade
 [ ] Etapa 13 Testes de carga
 [ ] Etapa 14 README final e revisão
@@ -627,35 +627,61 @@ Legenda: `[x]` concluída · `[~]` em andamento · `[ ]` pendente
 > concordar no nome do exchange e da fila —, e duplicá-la nos dois contextos
 > tornaria possível uma divergência que quebraria a integração em silêncio.
 
-## Etapa 11 — APIs HTTP
+## Etapa 11 — APIs HTTP ✅
 
 ### Cash Flow API
 
-- [ ] `POST /transactions` conforme contrato
-- [ ] `GET /transactions` conforme contrato
-- [ ] `GET /transactions/{id}` conforme contrato
-- [ ] Validação de entrada
-- [ ] Middleware de exceção → Problem Details
-- [ ] Middleware de `correlationId` (ADR-011)
-- [ ] OpenAPI + Swagger UI
-- [ ] Conferir a OpenAPI gerada contra [`api-contracts.md`](./api-contracts.md)
-- [ ] Integração com `WebApplicationFactory`
+- [x] `POST /transactions` conforme contrato
+- [x] `GET /transactions` conforme contrato
+- [x] `GET /transactions/{id}` conforme contrato
+- [x] Validação de entrada
+- [x] Middleware de exceção → Problem Details
+- [x] Middleware de `correlationId` (ADR-011)
+- [x] OpenAPI + Swagger UI
+- [x] Conferir a OpenAPI gerada contra [`api-contracts.md`](./api-contracts.md)
+- [x] Integração com `WebApplicationFactory`
 
 ### Consolidation API
 
-- [ ] `GET /daily-balances/{date}` conforme contrato
-- [ ] Validação do formato de data
-- [ ] Middleware de exceção → Problem Details
-- [ ] Middleware de `correlationId` (ADR-011)
-- [ ] OpenAPI + Swagger UI
-- [ ] Conferir a OpenAPI gerada contra [`api-contracts.md`](./api-contracts.md)
-- [ ] Integração com `WebApplicationFactory`
+- [x] `GET /daily-balances/{date}` conforme contrato
+- [x] Validação do formato de data
+- [x] Middleware de exceção → Problem Details
+- [x] Middleware de `correlationId` (ADR-011)
+- [x] OpenAPI + Swagger UI
+- [x] Conferir a OpenAPI gerada contra [`api-contracts.md`](./api-contracts.md)
+- [x] Integração com `WebApplicationFactory`
 
 ### Fluxo ponta a ponta
 
-- [ ] Integração: `POST /transactions` → evento → `GET /daily-balances/{date}`
-- [ ] Integração: consolidação responde com o serviço de lançamentos fora do ar (RF-006)
-- [ ] CI verde
+- [x] Integração: `POST /transactions` → evento → `GET /daily-balances/{date}`
+- [x] Integração: consolidação responde com o serviço de lançamentos fora do ar (RF-006)
+- [x] CI verde
+
+> Duas correções de contrato apareceram ao implementar:
+>
+> A rota de consulta por id não usa a restrição `:guid`. Com ela, um id malformado
+> não casaria a rota e viraria `404`, mas o contrato distingue os dois casos —
+> `400` para formato inválido, `404` para id válido e inexistente (§2.2).
+>
+> `occurredAt` omitido passa a ser **exatamente** igual a `createdAt`, como o
+> contrato promete. Eram duas leituras de relógio e diferiam por microssegundos.
+> A política de premissa P-08 desceu do caso de uso para o domínio, que é onde os
+> dois campos nascem: manter uma leitura de relógio de cada lado não teria como
+> produzir igualdade.
+>
+> Validar em cascata teria quebrado §4.2. O ambiente real mostrou que `type` e
+> `amount` inválidos juntos reportavam só um deles: o domínio para no primeiro
+> erro. A borda passa a perguntar campo a campo, usando as mesmas fábricas do
+> domínio — todos os campos inválidos vêm de uma vez, e a regra continua com um
+> dono só.
+>
+> RF-006 não é verificada por um teardown. A fixture da Consolidation API não tem
+> `cashflow_db`, não tem broker e não carrega assembly algum do outro contexto —
+> a independência é a própria montagem do teste.
+>
+> `EndToEndTests` é o único projeto que referencia os dois contextos, e existe
+> porque a integração entre eles não cabe em nenhum dos dois lados. Os projetos de
+> produção continuam sem se referenciar.
 
 ## Etapa 12 — Resiliência e observabilidade
 
