@@ -7,7 +7,7 @@
 > Regra de uso: **este arquivo é atualizado no mesmo Pull Request que entrega o
 > item**. Checkbox marcado sem entrega correspondente é ruído, não progresso.
 
-**Etapa atual: 7 — Casos de uso (TDD)**
+**Etapa atual: 8 — Infraestrutura de lançamentos**
 
 ## Progresso macro
 
@@ -18,8 +18,8 @@
 [x] Etapa 4  Contratos de API e eventos
 [x] Etapa 5  Esqueleto da solução, ambiente e CI
 [x] Etapa 6  Domínio (TDD)
-[~] Etapa 7  Casos de uso (TDD)
-[ ] Etapa 8  Infraestrutura de lançamentos
+[x] Etapa 7  Casos de uso (TDD)
+[~] Etapa 8  Infraestrutura de lançamentos
 [ ] Etapa 9  Mensageria e outbox
 [ ] Etapa 10 Consolidação e idempotência
 [ ] Etapa 11 APIs HTTP
@@ -409,7 +409,7 @@ Legenda: `[x]` concluída · `[~]` em andamento · `[ ]` pendente
 
 ---
 
-## Etapa 7 — Casos de uso (TDD) 🚧
+## Etapa 7 — Casos de uso (TDD) ✅
 
 > Casos de uso sinalizam falha por **exceção** e ausência por **retorno nulável**.
 > Violação de regra sobe como `DomainException` e vira `400` no middleware da
@@ -424,8 +424,8 @@ Legenda: `[x]` concluída · `[~]` em andamento · `[ ]` pendente
 - [x] `ITransactionRepository`
 - [x] `IOutboxRepository`
 - [x] `IEventPublisher`
-- [ ] `IDailyBalanceRepository`
-- [ ] `IProcessedEventRepository`
+- [x] `IDailyBalanceRepository`
+- [x] `IProcessedEventRepository`
 - [x] `IUnitOfWork` (ou equivalente para atomicidade)
 
 > `IUnitOfWork` é por contexto, como o resto: o da consolidação nasce com o seu
@@ -482,19 +482,38 @@ Legenda: `[x]` concluída · `[~]` em andamento · `[ ]` pendente
 
 ### `ConsolidateTransaction` (UC-04)
 
-- [ ] RED: crédito aumenta o saldo do dia
-- [ ] RED: débito reduz o saldo do dia
-- [ ] RED: evento repetido não altera o saldo duas vezes (RNF-008)
-- [ ] RED: primeiro lançamento do dia cria o saldo
-- [ ] RED: usa `data.occurredAt` para determinar o dia (RN-004)
-- [ ] GREEN + REFACTOR
+- [x] RED: crédito aumenta o saldo do dia
+- [x] RED: débito reduz o saldo do dia
+- [x] RED: evento repetido não altera o saldo duas vezes (RNF-008)
+- [x] RED: primeiro lançamento do dia cria o saldo
+- [x] RED: usa `data.occurredAt` para determinar o dia (RN-004)
+- [x] GREEN + REFACTOR
+
+> O caso de uso recebe o evento como ele chega do contrato. Traduzi-lo para um
+> comando idêntico campo a campo seria indireção sem ganho — `Shared.Contracts`
+> existe justamente para ser a fronteira compartilhada.
+>
+> A consulta a `processed_events` antes de aplicar é o **caminho barato**, não a
+> garantia: duas mensagens concorrentes podem passar as duas pela verificação, e
+> quem decide é a chave primária no commit
+> ([ADR-007](./decisions/ADR-007-idempotency.md)). O tratamento da violação de
+> unicidade é da etapa 10, com banco real — aqui ele não teria o que exercitar.
+>
+> Há teste de que dois eventos **distintos** sobre o mesmo lançamento são ambos
+> aplicados: `eventId` identifica a mensagem, não o lançamento (contrato §5.3).
+> Usar `transactionId` como chave de idempotência funcionaria hoje e quebraria no
+> primeiro evento adicional.
 
 ### `GetDailyBalance` (UC-02)
 
-- [ ] RED: retorna saldo existente
-- [ ] RED: comportamento definido para dia sem lançamentos
-- [ ] RED: expõe `updatedAt` (ADR-006)
-- [ ] GREEN + REFACTOR
+- [x] RED: retorna saldo existente
+- [x] RED: comportamento definido para dia sem lançamentos
+- [x] RED: expõe `updatedAt` (ADR-006)
+- [x] GREEN + REFACTOR
+
+> A consulta sempre devolve um saldo, inclusive para data futura: o contrato não
+> distingue "ainda não aconteceu" de "não houve movimentação", e a distinção não
+> mudaria o número.
 
 ### `PublishPendingOutboxMessages` (UC-05)
 
@@ -511,10 +530,10 @@ Legenda: `[x]` concluída · `[~]` em andamento · `[ ]` pendente
 
 ### Definition of Done da etapa
 
-- [ ] Todos os casos de uso testados com dublês
-- [ ] Nenhuma dependência de infraestrutura na camada de aplicação
-- [ ] Testes de arquitetura continuam verdes
-- [ ] CI verde
+- [x] Todos os casos de uso testados com dublês
+- [x] Nenhuma dependência de infraestrutura na camada de aplicação
+- [x] Testes de arquitetura continuam verdes
+- [x] CI verde
 
 ---
 
