@@ -200,27 +200,33 @@ segundo, tolerando uma perda máxima de 5%"*. A frase é ambígua: "chamadas" po
 significar (a) requisições HTTP de leitura do saldo consolidado ou (b) eventos de
 lançamento a serem consolidados.
 
-**Decisão:** tratamos os dois casos, porque a arquitetura precisa sustentar ambos:
+**Decisão:** adotamos (a) — leitura do saldo consolidado — como interpretação
+principal, porque a frase do enunciado é sobre *o sistema de consolidação*. A
+arquitetura sustenta as duas leituras, mas apenas a principal vira número medido:
 
-| Cenário | Carga | Critério de aceite |
-|---------|-------|--------------------|
-| Escrita de lançamentos | 50 req/s em `POST /transactions` | ≥ 95% de sucesso |
-| Ingestão de eventos | 50 eventos/s consolidados | ≥ 95% processados |
-| Leitura de saldo | 50 req/s em `GET /daily-balances/{date}` | ≥ 95% de sucesso |
+| Cenário | Carga | Critério de aceite | Medido? |
+|---------|-------|--------------------|---------|
+| Leitura de saldo | 50 req/s em `GET /daily-balances/{date}` | ≥ 95% de sucesso | **Sim** — cenário obrigatório |
+| Ingestão de eventos | 50 eventos/s consolidados | ≥ 95% processados | Extra |
+| Escrita de lançamentos | 50 req/s em `POST /transactions` | ≥ 95% de sucesso | Extra |
 
-Os 5% são o **limite tolerado pelo desafio**, não a nossa meta. Meta interna:
+Os 5% são o **limite tolerado pelo desafio**, não a nossa meta. Meta interna para
+o cenário obrigatório:
 
 ```
 taxa de erro HTTP  < 1%
-perda de eventos   = 0%
 ```
 
-A meta de perda zero se apoia no Outbox: o evento é gravado na mesma transação do
+**Perda de evento igual a zero** continua sendo a meta, mas não é medida por
+carga: ela se apoia no Outbox — o evento é gravado na mesma transação do
 lançamento e permanece durável no banco até ser publicado, de modo que uma falha
-do broker atrasa a consolidação em vez de descartar o evento. Ver
-[ADR-004](./decisions/ADR-004-transactional-outbox.md).
+do broker atrasa a consolidação em vez de descartar o evento
+([ADR-004](./decisions/ADR-004-transactional-outbox.md)). A prova é funcional, nos
+testes de integração das etapas 8 a 11, onde a evidência é direta e independe da
+máquina de medição.
 
-A verificação é feita com k6 — ver [ADR-010](./decisions/ADR-010-performance-validation.md).
+A verificação de carga é feita com k6 — ver
+[ADR-010](./decisions/ADR-010-performance-validation.md).
 
 ---
 

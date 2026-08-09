@@ -21,7 +21,7 @@ testabilidade avaliadas pelo desafio.
 | Mensageria | **RabbitMQ.Client** | Cliente oficial, controle explícito de ack, confirms e DLQ — ver [ADR-003](./ADR-003-messaging.md) |
 | Workers | **`BackgroundService`** | Hospedagem nativa, sem framework adicional |
 | Testes | **xUnit + FluentAssertions + NSubstitute + Testcontainers** | Ver [ADR-008](./ADR-008-tdd.md) |
-| Logs | **Serilog** | Ver [ADR-011](./ADR-011-observability.md) |
+| Logs | **`ILogger` + `AddJsonConsole`** | Sem dependência externa — ver [ADR-011](./ADR-011-observability.md) |
 | Documentação de API | **Swagger / OpenAPI** | Torna as APIs exploráveis sem cliente externo |
 | Carga | **k6** | Ver [ADR-010](./ADR-010-performance-validation.md) |
 

@@ -20,8 +20,8 @@ com um documento, e não com "foi assim que decidimos".
 | [ADR-007](./ADR-007-idempotency.md) | Idempotência no consumidor de eventos | Aceito | RNF-008 |
 | [ADR-008](./ADR-008-tdd.md) | TDD como fluxo de desenvolvimento | Aceito | RT-002, RNF-009 |
 | [ADR-009](./ADR-009-containers.md) | Docker e Docker Compose para reprodutibilidade | Aceito | RNF-012, RT-007 |
-| [ADR-010](./ADR-010-performance-validation.md) | Validação de performance com k6 | Aceito | RNF-003, RNF-004 |
-| [ADR-011](./ADR-011-observability.md) | Observabilidade: logs, correlação e health checks | Aceito | RNF-011, RNF-013 |
+| [ADR-010](./ADR-010-performance-validation.md) | Validação de performance com k6 | Aceito · revisada em 2026-08-09 | RNF-003, RNF-004 |
+| [ADR-011](./ADR-011-observability.md) | Observabilidade: logs, correlação e health checks | Aceito · revisada em 2026-08-09 | RNF-011, RNF-013 |
 | [ADR-012](./ADR-012-tech-stack.md) | Stack técnica: .NET 10 e ASP.NET Core | Aceito | RT-001 |
 | [ADR-013](./ADR-013-money-representation.md) | Representação de valores monetários e tipo de lançamento | Aceito | RN-001..004 |
 | [ADR-014](./ADR-014-cursor-pagination.md) | Paginação por cursor (keyset) na listagem de lançamentos | Aceito | RF-003 |
@@ -87,5 +87,14 @@ documentação existente.
 
 - Numeração sequencial, sem reuso: uma ADR nunca é apagada.
 - Status possíveis: `Proposto`, `Aceito`, `Rejeitado`, `Substituído por ADR-XXX`.
-- Decisão revista **não** é editada: cria-se uma nova ADR que a substitui, e a
-  antiga passa a `Substituído por`. O histórico do raciocínio é parte do valor.
+- Decisão **substituída** — a escolha central deixa de valer — não é editada:
+  cria-se uma nova ADR que a substitui, e a antiga passa a `Substituído por`.
+- Decisão **revista em parte** — a escolha central continua valendo, mas o escopo,
+  a ferramenta ou um detalhe mudam — é corrigida no próprio documento, com uma
+  linha `Revisado em:` no cabeçalho e uma seção `Revisão` ao final dizendo **o que
+  mudou, por quê e o que não mudou**. Abrir uma ADR nova para registrar que
+  passamos a usar menos de alguma coisa faria a documentação crescer justamente
+  quando o sistema encolhe.
+- Nos dois casos vale a mesma regra: nunca editar em silêncio. As alternativas
+  rejeitadas permanecem na tabela, com o veredito atualizado — o histórico do
+  raciocínio é parte do valor.
