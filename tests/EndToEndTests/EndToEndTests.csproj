@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <ItemGroup>
     <PackageReference Include="coverlet.collector" Version="6.0.4" />
@@ -15,10 +15,16 @@
     <Using Include="Xunit" />
   </ItemGroup>
 
+  <!--
+    O único projeto que referencia os dois contextos. Ele existe para verificar a
+    integração entre eles, que por definição não cabe em nenhum dos dois lados —
+    e é justamente por isso que os projetos de produção continuam sem se
+    referenciar (ADR-002, verificado pelos testes de arquitetura).
+  -->
   <ItemGroup>
+    <ProjectReference Include="..\..\src\CashFlow.Api\CashFlow.Api.csproj" />
     <ProjectReference Include="..\..\src\Consolidation.Api\Consolidation.Api.csproj" />
     <ProjectReference Include="..\..\src\Consolidation.Infrastructure\Consolidation.Infrastructure.csproj" />
-    <ProjectReference Include="..\..\src\Consolidation.Worker\Consolidation.Worker.csproj" />
   </ItemGroup>
 
 </Project>
