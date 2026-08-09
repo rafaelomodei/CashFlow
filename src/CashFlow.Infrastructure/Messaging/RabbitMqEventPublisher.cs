@@ -31,6 +31,12 @@ public sealed class RabbitMqEventPublisher : IEventPublisher
             ContentEncoding = "utf-8",
             DeliveryMode = DeliveryModes.Persistent,
             MessageId = message.Id.ToString(),
+
+            // Exigida pelo contrato §5.4, e é ela que o worker lê para colocar a
+            // correlação em escopo de log. Sem ela o rastro se perde exatamente no
+            // processo mais distante da requisição original — o único ponto em que
+            // "onde parou?" é difícil de responder de outro jeito (ADR-011).
+            CorrelationId = message.CorrelationId.ToString(),
             Type = message.Type,
             Timestamp = new AmqpTimestamp(message.OccurredAt.ToUnixTimeSeconds()),
             Headers = new Dictionary<string, object?>

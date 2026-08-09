@@ -74,6 +74,7 @@ public sealed class RegisterTransactionUseCase
             eventId,
             TransactionRegisteredEvent.Type,
             JsonSerializer.Serialize(integrationEvent, IntegrationEvents.SerializerOptions),
-            emittedAt);
+            emittedAt,
+            correlationId);
     }
 }

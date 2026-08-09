@@ -5,7 +5,14 @@ using Microsoft.AspNetCore.Mvc;
 var builder = WebApplication.CreateBuilder(args);
 
 // Saída estruturada em JSON, sem dependência externa (ADR-011).
-builder.Logging.AddJsonConsole();
+builder.Logging.AddJsonConsole(options =>
+{
+    // Sem isto o escopo não é emitido, e o `correlationId` — que viaja em escopo
+    // justamente para acompanhar todo log da requisição — nunca chega à saída.
+    // A promessa de reconstruir a jornada de um lançamento com uma busca só
+    // depende deste `true` (ADR-011).
+    options.IncludeScopes = true;
+});
 
 builder.Services
     .AddControllers()
