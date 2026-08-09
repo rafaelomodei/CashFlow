@@ -135,6 +135,27 @@ services:
         condition: service_healthy
     networks: [cashflow-net]
 
+  # Sétimo container — ADR-015. Serve a tela e encaminha `/api/*` às duas APIs.
+  #
+  # Não há `depends_on`: o nginx resolve os upstreams por DNS a cada requisição,
+  # então a tela sobe com as duas APIs fora do ar e cada região exibe o seu
+  # próprio erro. Fazê-lo esperar pelas APIs contradiria justamente a
+  # degradação parcial que ele existe para demonstrar.
+  frontend:
+    build:
+      context: .
+      dockerfile: src/Frontend/Dockerfile
+    container_name: frontend
+    ports:
+      - "${FRONTEND_PORT}:8080"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q --spider http://127.0.0.1:8080/healthz || exit 1"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+      start_period: 5s
+    networks: [cashflow-net]
+
   # Perfil `load`: não sobe com `docker compose up -d`. Uma ferramenta de carga
   # ligada junto do ambiente competiria por CPU com o que ela deveria medir.
   k6:

@@ -9,6 +9,11 @@
 
 **Etapa atual: 14 — README final e revisão**
 
+> A etapa 15 foi executada **antes** da 14, e está concluída. A 14 fecha o README
+> contra o que foi entregue; fechá-lo antes da tela existir obrigaria a
+> reescrevê-lo em seguida. A ordem numérica registra quando a decisão apareceu,
+> não a ordem de execução.
+
 ## Progresso macro
 
 ```
@@ -26,6 +31,7 @@
 [x] Etapa 12 Resiliência e observabilidade
 [x] Etapa 13 Testes de carga
 [ ] Etapa 14 README final e revisão
+[x] Etapa 15 Frontend de demonstração
 ```
 
 Legenda: `[x]` concluída · `[~]` em andamento · `[ ]` pendente
@@ -753,3 +759,156 @@ Extras, apenas se sobrar tempo:
 - [ ] Decidir sobre a permanência de `AGENTS.md`, `CLAUDE.md` e `.claude/`
 - [ ] Repositório público no GitHub
 - [ ] Validação final: clone limpo → `docker compose up -d` → sistema funcional
+
+---
+
+## Etapa 15 — Frontend de demonstração ✅
+
+> Decisão em [ADR-015](./decisions/ADR-015-frontend.md). Recorte de escopo em
+> [`scope.md`](./scope.md) §4.1.
+>
+> **Ordem:** esta etapa é executada **antes** da 14. O README final descreve o
+> sistema entregue, e reescrevê-lo duas vezes — uma sem a tela, outra com ela —
+> seria retrabalho garantido. A etapa 14 permanece a última.
+>
+> **A regra de contenção vale item a item:** sem regra de negócio, sem soma de
+> dinheiro no cliente, sem mudança de contrato, sem servidor próprio. Um item que
+> só possa ser concluído violando uma das quatro é o item que está errado.
+
+### Fundação
+
+- [x] Criar `src/Frontend/` com Vite + React 19 + TypeScript
+- [x] Configurar Tailwind CSS consumindo os tokens de `styles/globals.css`
+- [x] Configurar Vitest + Testing Library
+- [x] Configurar `server.proxy` do Vite com `/api/cashflow` e `/api/consolidation`
+- [x] `.gitignore` para `node_modules/` e `dist/`
+- [x] Verificar que nenhuma variável `VITE_*_API_URL` é necessária
+
+### Design tokens e componentes de UI
+
+- [x] Declarar os tokens observados no site da Verity (ADR-015 §"Tokens observados")
+- [x] Carregar Poppins (300/400/500/600) sem depender de rede em runtime
+- [x] Declarar `--color-success` e `--color-danger` marcados como **derivação
+      nossa**, não da marca
+- [x] Verificar contraste AA (4.5:1) de cada par texto/fundo
+- [x] `Button` — variantes primária e secundária, raio *pill*
+- [x] `Input`
+- [x] `Select`
+- [x] `Card`
+- [x] `Badge` — crédito e débito
+- [x] `Modal`
+- [x] `Table`
+- [x] Verificar que nenhum componente de `components/ui/` conhece o domínio
+
+### Clientes de API
+
+- [x] Tipos TypeScript dos DTOs, derivados de [`api-contracts.md`](./api-contracts.md)
+- [x] `cashFlowApi.ts` — `POST /transactions`, `GET /transactions`, `GET /transactions/{id}`
+- [x] `consolidationApi.ts` — `GET /daily-balances/{date}`
+- [x] Parsing de Problem Details, incluindo `errors` e `correlationId`
+- [x] Envio de `X-Correlation-Id` na requisição
+- [x] Verificar que os dois clientes são independentes — nenhum importa o outro
+
+### Tela
+
+- [x] `DashboardPage` — layout de uma tela
+- [x] `BalanceCard` + `useDailyBalance` — saldo, créditos e débitos do dia
+- [x] Seletor de data do saldo
+- [x] `TransactionTable` + `useTransactions` — listagem
+- [x] Filtro de período (`startDate`, `endDate`)
+- [x] "Carregar mais" consumindo `nextCursor` (ADR-014)
+- [x] `TransactionForm` + `useCreateTransaction` — modal de lançamento
+- [x] Exibir erro de validação campo a campo a partir de `errors`
+- [x] Exibir `correlationId` em erro inesperado (ADR-011)
+- [x] Formatação pt-BR de moeda e data, isolada em um único módulo
+
+### Consistência eventual visível
+
+- [x] Após `201`, invalidar a listagem e entrar em estado "sincronizando"
+- [x] Refetch do saldo até `updatedAt` avançar além do instante do `201`
+- [x] **Condição de parada por tempo máximo**, não apenas por sucesso
+- [x] Esgotado o limite: informar consolidação atrasada e oferecer atualização manual
+- [x] Exibir "atualizado há N s" derivado de `updatedAt`
+- [x] Tratar `updatedAt: null` como dia sem movimentação, não como erro
+
+### Estados
+
+- [x] `loading` para cada região
+- [x] `empty` — `items: []` e saldo zerado são resultado, nunca "não encontrado"
+- [x] `error` **por região**: falha no saldo não derruba a tabela, e vice-versa
+
+### Testes (TDD — ADR-008)
+
+- [x] RED: formulário rejeita valor ≤ 0 antes de chamar a API
+- [x] RED: formulário rejeita mais de duas casas decimais
+- [x] RED: erro `400` da API é exibido no campo correspondente
+- [x] RED: tabela exibe estado vazio para `items: []`
+- [x] RED: card exibe saldo zerado para `updatedAt: null`
+- [x] RED: falha no saldo não impede o formulário de enviar
+- [x] RED: o polling de convergência termina ao esgotar o tempo máximo
+- [x] GREEN + REFACTOR
+
+### Empacotamento
+
+- [x] `Dockerfile` multi-stage — build Node, runtime nginx alpine
+- [x] `nginx.conf` — estático + `proxy_pass` para as duas APIs
+- [x] Serviço `frontend` no `docker-compose.yml` (sétimo container)
+- [x] `FRONTEND_PORT` no `.env.example`
+- [x] Verificar que o frontend sobe com as duas APIs fora do ar
+- [x] Job de CI: `npm ci`, `npm run test`, `npm run build`
+
+### Documentação
+
+- [x] Seção de frontend no README — stack, execução e o que a tela demonstra
+- [x] Atualizar o diagrama de containers em [`architecture.md`](./architecture.md) §3
+- [x] Atualizar este arquivo
+
+### Definition of Done da etapa
+
+- [x] `docker compose up -d` sobe sete containers e a tela responde
+- [x] `grep -r "5001\|5002" src/Frontend/dist/` não retorna nada
+- [x] `grep -rn "AddCors" src/` continua sem resultado
+- [x] Com a Consolidation API parada, o lançamento continua funcionando
+- [x] Com o worker parado, o card informa atraso em tempo finito
+- [x] Nenhuma soma de valor monetário no cliente
+- [x] Nenhuma mudança em contrato, endpoint ou regra de domínio
+- [ ] CI verde, incluindo os jobs .NET existentes — só verificável no Pull Request
+
+> **Verificações executadas no ambiente real**, e não apenas por teste:
+>
+> | Verificação | Resultado |
+> |-------------|-----------|
+> | `docker compose up -d` | sete containers, todos `healthy` |
+> | Frontend sobe com as duas APIs fora do ar | tela em `200`, `/api/*` em `502` |
+> | Consolidation API parada | card de saldo com erro, `POST /transactions` em `201` |
+> | Worker parado | card informou "Consolidação atrasada" e o polling terminou |
+> | Worker religado | evento retido na fila foi aplicado, saldo convergiu |
+> | `grep -r "5001\|5002" src/Frontend/dist/` | sem resultado |
+> | `grep -rn "AddCors" --include="*.cs" src` | sem resultado |
+>
+> Três defeitos apareceram apenas na execução real, e nenhum deles falharia em
+> teste unitário:
+>
+> O `proxy_pass` com nome literal faz o nginx resolver o upstream **na carga da
+> configuração** e recusar-se a subir quando a API está fora do ar — o oposto do
+> que a ADR promete. Passou a resolver por variável, com o DNS do Docker, o que
+> move a resolução para o tempo de requisição.
+>
+> O healthcheck usava `localhost`, que no Alpine resolve para `::1` antes de
+> `127.0.0.1`. O nginx escuta apenas em IPv4, então o container ficava
+> `unhealthy` enquanto servia normalmente pela porta publicada.
+>
+> O `sed` que reescreve o caminho do pid não casava com o valor da imagem
+> (`/run/nginx.pid`, não `/var/run/nginx.pid`) e falhava em silêncio — o
+> sintoma era o container reiniciando. Passou a reescrever a linha inteira e a
+> conferir o resultado no próprio `RUN`.
+>
+> Uma fronteira interna foi violada e corrigida: `Badge` recebia `tone="credit"`,
+> vocabulário de domínio dentro de `components/ui/`. Passou a `positive` /
+> `negative`, e a tradução ficou em `features/`.
+>
+> A validação do formulário espelha os limites de contrato (§1.4, §2.1), não as
+> regras do domínio. O servidor continua sendo a autoridade: o que o cliente
+> deixar passar volta como `400` e é exibido campo a campo. É a mesma linha que a
+> revisão da [ADR-012](./decisions/ADR-012-tech-stack.md) adotou ao dispensar
+> FluentValidation — duas verdades divergem na primeira mudança.

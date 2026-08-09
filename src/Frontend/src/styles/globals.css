@@ -1,0 +1,84 @@
+@import 'tailwindcss';
+
+/* -------------------------------------------------------------------------
+ * Design tokens
+ *
+ * Extraídos por inspeção do site público https://www.verity.com.br/ em
+ * 2026-08-09. Não são o Design System oficial da Verity — ele não é público.
+ * Ver docs/decisions/ADR-015-frontend.md §"Design system".
+ *
+ * O bloco `@theme` do Tailwind v4 é a declaração dos tokens: ele emite as
+ * custom properties em `:root` e gera as utilities correspondentes. Uma cor
+ * declarada aqui e uma classe utilitária não podem divergir porque são a mesma
+ * declaração.
+ * ------------------------------------------------------------------------- */
+
+@theme {
+  /* Tipografia — Poppins é a única família do site. */
+  --font-sans: 'Poppins', ui-sans-serif, system-ui, -apple-system, sans-serif;
+
+  /* --- Marca: observados no site ---------------------------------------- */
+  --color-primary: #0041ff;
+  --color-primary-dark: #1a1086;
+  --color-primary-light: #5e97ff;
+  --color-primary-foreground: #ffffff;
+
+  /* --- Neutros: observados no site -------------------------------------- */
+  --color-background: #ffffff;
+  --color-surface: #fafafa;
+  --color-border: #e2e2e2;
+  --color-border-strong: #dbdbdb;
+  --color-foreground: #202020;
+
+  /*
+   * O site usa #8f8f8f para texto de apoio, que rende 3.1:1 sobre branco e
+   * reprova em AA (4.5:1). Escurecido para 5.3:1 — a hierarquia visual é a
+   * mesma e o texto passa a ser legível.
+   */
+  --color-muted: #6b6b6b;
+
+  /* --- Semânticos: derivação NOSSA, não da marca ------------------------
+   * O site não publica paleta semântica. O #ff4040 presente no HTML dele é o
+   * padrão do construtor de sites, não uma escolha de design. Estes dois
+   * valores foram escolhidos por nós para conviver com o azul primário e
+   * atingir AA sobre branco (4.88:1 e 5.61:1).
+   */
+  --color-success: #0f7a4d;
+  --color-success-surface: #e8f5ee;
+  --color-danger: #c62828;
+  --color-danger-surface: #fdeaea;
+
+  /* --- Forma --------------------------------------------------------------
+   * Todos os botões do site são totalmente arredondados (23px a 200px conforme
+   * o tamanho). O pill é, junto da Poppins, o que mais carrega o
+   * reconhecimento visual da marca.
+   */
+  --radius-pill: 9999px;
+  --radius-card: 16px;
+  --radius-field: 12px;
+
+  /* Gradiente de destaque do site. */
+  --gradient-brand: linear-gradient(155deg, #0041ff 38.5%, #010eff 100%);
+}
+
+@layer base {
+  html {
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+  }
+
+  body {
+    background-color: var(--color-surface);
+    color: var(--color-foreground);
+  }
+
+  /*
+   * Foco visível em todo elemento interativo. O outline padrão do browser
+   * some quando se estiliza o componente, e removê-lo sem substituto torna a
+   * aplicação inutilizável por teclado.
+   */
+  :focus-visible {
+    outline: 2px solid var(--color-primary);
+    outline-offset: 2px;
+  }
+}

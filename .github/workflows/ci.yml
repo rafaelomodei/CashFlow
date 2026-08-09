@@ -61,6 +61,35 @@ jobs:
           path: "**/TestResults/*.trx"
           if-no-files-found: ignore
 
+  # Roda em paralelo ao gate rápido, e não depois: o frontend não compartilha
+  # nada com a solution .NET, então encadeá-los só atrasaria o sinal de um deles.
+  frontend:
+    name: Frontend — tipos, testes e build
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: src/Frontend
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configurar Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: src/Frontend/package-lock.json
+
+      - name: Instalar dependências
+        run: npm ci
+
+      - name: Testes
+        run: npm run test
+
+      # `npm run build` roda `tsc --noEmit` antes do bundle: um DTO que divergir
+      # do contrato quebra aqui, e não na tela.
+      - name: Build
+        run: npm run build
+
   integration:
     name: Testes de integração
     runs-on: ubuntu-latest
