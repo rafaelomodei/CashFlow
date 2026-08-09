@@ -5,6 +5,7 @@ using CashFlow.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using RabbitMQ.Client;
+using Shared.Contracts;
 using Testcontainers.PostgreSql;
 using Testcontainers.RabbitMq;
 

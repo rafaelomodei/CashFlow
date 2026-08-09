@@ -1,9 +1,15 @@
-namespace CashFlow.Infrastructure.Messaging;
+namespace Shared.Contracts;
 
 /// <summary>
 /// Nomes da topologia definida em ADR-003 e em `api-contracts.md` §5.4.
 ///
-/// São constantes, e não configuração: mudá-los quebra produtor e consumidor ao
+/// Vive aqui, e não na infraestrutura de um dos lados, porque é **contrato**: o
+/// produtor publica em um exchange e o consumidor escuta em uma fila ligada a
+/// ele, e uma divergência entre os dois nomes quebraria a integração em silêncio
+/// — sem erro de compilação, sem exceção, apenas eventos que nunca chegam.
+/// Duplicar as constantes nos dois contextos tornaria essa divergência possível.
+///
+/// São constantes, e não configuração: mudá-las quebra produtor e consumidor ao
 /// mesmo tempo, e uma quebra dessas não deveria caber em uma variável de
 /// ambiente. O que varia entre ambientes é o endereço do broker, não a forma da
 /// topologia.

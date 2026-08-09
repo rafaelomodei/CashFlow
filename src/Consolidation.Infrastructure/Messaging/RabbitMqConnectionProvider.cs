@@ -2,20 +2,18 @@ using Microsoft.Extensions.Options;
 using RabbitMQ.Client;
 using Shared.Contracts;
 
-namespace CashFlow.Infrastructure.Messaging;
+namespace Consolidation.Infrastructure.Messaging;
 
 /// <summary>
-/// Dono da conexão e do canal com o broker, e o único lugar que declara a
-/// topologia.
+/// Conexão e canal do lado consumidor, e o único lugar que declara a topologia
+/// aqui.
 ///
-/// A conexão é aberta **na primeira publicação**, não na inicialização. É o que
-/// permite à Cash Flow API subir e registrar lançamentos com o RabbitMQ fora do
-/// ar (RNF-001, ADR-009): tornar o broker pré-condição de startup contradiria o
-/// Outbox inteiro.
+/// O consumidor também declara, e não apenas o produtor: os dois serviços sobem
+/// em ordem indefinida, e quem chegar primeiro precisa encontrar — ou criar — a
+/// fila. A declaração é idempotente no RabbitMQ, então declarar dos dois lados
+/// não custa nada e cobre as duas ordens de inicialização.
 ///
-/// Pelo mesmo motivo, uma conexão perdida não é erro terminal — a próxima
-/// chamada reabre. O broker pode cair e voltar sem que ninguém reinicie nada
-/// (RNF-007).
+/// Sem confirmação de publicação: quem publica é o outro contexto.
 /// </summary>
 public sealed class RabbitMqConnectionProvider : IAsyncDisposable
 {
@@ -49,15 +47,7 @@ public sealed class RabbitMqConnectionProvider : IAsyncDisposable
 
             await DiscardAsync();
             _connection = await CreateConnectionAsync(cancellationToken);
-
-            // Confirmações rastreadas: com elas, `BasicPublishAsync` só retorna
-            // depois do ack do broker, e a mensagem do outbox só é marcada como
-            // publicada quando de fato foi (ADR-004).
-            _channel = await _connection.CreateChannelAsync(
-                new CreateChannelOptions(
-                    publisherConfirmationsEnabled: true,
-                    publisherConfirmationTrackingEnabled: true),
-                cancellationToken);
+            _channel = await _connection.CreateChannelAsync(cancellationToken: cancellationToken);
 
             await DeclareTopologyAsync(_channel, cancellationToken);
 
@@ -78,26 +68,12 @@ public sealed class RabbitMqConnectionProvider : IAsyncDisposable
             UserName = _options.Username,
             Password = _options.Password,
             RequestedConnectionTimeout = _options.ConnectionTimeout,
-
-            // Padrão do cliente, explícito porque dependemos dele. Medido: com um
-            // restart do broker, a recuperação automática sozinha resolve, e a
-            // verificação de canal aberto acima também resolve sozinha — desligar
-            // as duas é o que faz o teste de recuperação reprovar. A redundância é
-            // deliberada: a recuperação automática cobre a queda de rede, e
-            // reabrir do zero cobre o canal fechado por erro de protocolo, que ela
-            // não recupera.
             AutomaticRecoveryEnabled = true,
         };
 
         return factory.CreateConnectionAsync(cancellationToken);
     }
 
-    /// <summary>
-    /// Declarada a cada conexão, e não uma vez no startup: é idempotente no
-    /// RabbitMQ, e um broker que voltou de um restart sem volume persistido
-    /// precisa da topologia de novo. Declarar de menos custa mensagem perdida;
-    /// declarar de novo não custa nada.
-    /// </summary>
     private static async Task DeclareTopologyAsync(IChannel channel, CancellationToken cancellationToken)
     {
         await channel.ExchangeDeclareAsync(

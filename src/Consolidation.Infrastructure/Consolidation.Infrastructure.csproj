@@ -3,6 +3,7 @@
   <ItemGroup>
     <ProjectReference Include="..\Consolidation.Domain\Consolidation.Domain.csproj" />
     <ProjectReference Include="..\Consolidation.Application\Consolidation.Application.csproj" />
+    <ProjectReference Include="..\Shared.Contracts\Shared.Contracts.csproj" />
   </ItemGroup>
 
   <ItemGroup>
@@ -10,7 +11,11 @@
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
       <PrivateAssets>all</PrivateAssets>
     </PackageReference>
+    <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" Version="10.0.10" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.10" />
+    <PackageReference Include="Microsoft.Extensions.Options" Version="10.0.10" />
     <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="10.0.3" />
+    <PackageReference Include="RabbitMQ.Client" Version="7.2.2" />
   </ItemGroup>
 
 </Project>

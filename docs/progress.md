@@ -7,7 +7,7 @@
 > Regra de uso: **este arquivo é atualizado no mesmo Pull Request que entrega o
 > item**. Checkbox marcado sem entrega correspondente é ruído, não progresso.
 
-**Etapa atual: 10 — Consolidação e idempotência**
+**Etapa atual: 11 — APIs HTTP**
 
 ## Progresso macro
 
@@ -21,7 +21,7 @@
 [x] Etapa 7  Casos de uso (TDD)
 [x] Etapa 8  Infraestrutura de lançamentos
 [x] Etapa 9  Mensageria e outbox
-[ ] Etapa 10 Consolidação e idempotência
+[x] Etapa 10 Consolidação e idempotência
 [ ] Etapa 11 APIs HTTP
 [ ] Etapa 12 Resiliência e observabilidade
 [ ] Etapa 13 Testes de carga
@@ -596,26 +596,36 @@ Legenda: `[x]` concluída · `[~]` em andamento · `[ ]` pendente
 > ela já é verificável: o lançamento é gravado com o broker fora do ar e o evento
 > fica pendente, com tentativa e erro registrados.
 
-## Etapa 10 — Consolidação e idempotência
+## Etapa 10 — Consolidação e idempotência ✅
 
-- [ ] Consumidor com ack manual
-- [ ] Desserialização e validação do envelope
-- [ ] Verificação em `processed_events` antes de aplicar
-- [ ] Aplicação do evento e gravação do `event_id` na mesma transação (ADR-007)
-- [ ] Upsert atômico do saldo diário
-- [ ] Retry in-process com espera limitada, e `nack(requeue=false)` para a DLQ ao
+- [x] Consumidor com ack manual
+- [x] Desserialização e validação do envelope
+- [x] Verificação em `processed_events` antes de aplicar
+- [x] Aplicação do evento e gravação do `event_id` na mesma transação (ADR-007)
+- [x] Upsert atômico do saldo diário
+- [x] Retry in-process com espera limitada, e `nack(requeue=false)` para a DLQ ao
       esgotar as tentativas
-- [ ] Registrar a escolha e o motivo em [ADR-003](./decisions/ADR-003-messaging.md)
+- [x] Definir limite de tentativas antes da DLQ
+- [x] Registrar a escolha e o motivo em [ADR-003](./decisions/ADR-003-messaging.md)
+- [x] Integração: mesmo evento N vezes altera o saldo uma única vez (RNF-008)
+- [x] Integração: mensagem inválida chega à DLQ em tempo finito
+- [x] Integração: ausência de laço quente entre falha e reentrega
+- [x] Log estruturado do consumo, com `correlationId`
 
-> Entre os três mecanismos que a ADR-003 deixou em aberto, vale o mais simples:
-> ele não exige topologia extra e prova as três coisas que precisam ser provadas —
-> mensagem não some, mensagem repetida não duplica saldo, mensagem problemática
-> não trava a fila. Fila de retry com TTL e leitura de `x-death` resolveriam o
-> mesmo com mais peças.
-- [ ] Integração: mesmo evento N vezes altera o saldo uma única vez (RNF-008)
-- [ ] Integração: mensagem inválida chega à DLQ em tempo finito
-- [ ] Integração: ausência de laço quente entre falha e reentrega
-- [ ] Log estruturado do consumo, com `correlationId`
+> Não há `INSERT ... ON CONFLICT`. O upsert do saldo diário é feito pelo par
+> chave primária de `daily_balances` + retry: duas transações que tentem criar a
+> linha do mesmo dia disputam, a perdedora é desfeita **inteira** — inclusive a
+> marcação do evento — e a tentativa seguinte encontra a linha e soma sobre ela.
+> Há teste com 20 eventos concorrentes no mesmo dia, e nenhum se perde.
+>
+> Erro permanente não passa por retry: envelope ilegível, campo obrigatório
+> ausente e violação de regra de domínio vão direto para a DLQ. Um JSON quebrado
+> não fica válido na segunda leitura.
+>
+> A topologia mudou de lugar: era constante em `CashFlow.Infrastructure` e passou
+> para `Shared.Contracts`. Ela é contrato — produtor e consumidor precisam
+> concordar no nome do exchange e da fila —, e duplicá-la nos dois contextos
+> tornaria possível uma divergência que quebraria a integração em silêncio.
 
 ## Etapa 11 — APIs HTTP
 
