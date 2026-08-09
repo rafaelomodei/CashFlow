@@ -137,7 +137,7 @@ Cenários que demonstram RNF-001, RNF-005 e RNF-007:
 |-----------------------|----------------------|------------------------|-------------|
 | Consolidation API | ✅ funciona | ❌ indisponível | Automática ao subir |
 | Consolidation Worker | ✅ funciona | ⚠️ dados defasados | Consome o backlog da fila |
-| `consolidation_db` | ✅ funciona | ❌ indisponível | Worker reprocessa via nack/requeue |
+| `consolidation_db` | ✅ funciona | ❌ indisponível | Mensagem volta para a fila e é reprocessada quando o banco retorna |
 | RabbitMQ | ✅ funciona | ⚠️ dados defasados | Outbox retém e republica ao voltar |
 | Outbox Publisher | ✅ funciona | ⚠️ dados defasados | Publica o acumulado ao voltar |
 | Cash Flow API | ❌ indisponível | ✅ funciona | — |
@@ -151,6 +151,31 @@ Isso precisa valer também na configuração do ambiente, e não só no código:
 serviço declara o RabbitMQ como dependência de startup, e a prontidão da Cash Flow
 API não considera o broker. Ver [ADR-009](./decisions/ADR-009-containers.md) e
 [ADR-011](./decisions/ADR-011-observability.md).
+
+### Resultados medidos (etapa 12)
+
+Executados com `docker compose`, derrubando um componente por vez e registrando a
+resposta observada:
+
+| Cenário | `POST /transactions` | `GET /daily-balances` | Convergência após retorno |
+|---------|----------------------|------------------------|---------------------------|
+| Consolidation API parada | `201` | conexão recusada | automática |
+| Consolidation Worker parado | `201` | `200`, saldo defasado, 1 mensagem enfileirada | consome o backlog |
+| `consolidation_db` parado | `201` | `500` | automática |
+| RabbitMQ parado | `201` | `200`, saldo defasado, 1 evento retido no outbox | outbox republica |
+
+Em todos os quatro, `/health/ready` da Cash Flow API permaneceu `200`, e o saldo
+final igualou a soma de tudo o que foi registrado: nenhum evento perdido, apenas
+atrasado.
+
+**Um defeito encontrado ao executar os cenários.** A primeira execução com o
+`consolidation_db` fora do ar por 40 segundos mandou o evento para a DLQ e o saldo
+não convergiu — a janela de retry do consumidor era menor que a queda. A DLQ é
+para mensagem problemática, não para infraestrutura indisponível: um evento válido
+não pode virar trabalho manual porque o banco piscou. O consumidor passou a
+distinguir os dois casos por `DbException.IsTransient` e devolve a mensagem à fila
+quando a falha é de conectividade. Reexecutado, o saldo converge e a DLQ fica
+vazia.
 
 ## 7. Clean Architecture — camadas
 

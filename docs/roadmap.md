@@ -22,7 +22,7 @@
 [✓] Etapa 9  Mensageria e outbox
 [✓] Etapa 10 Consolidação e idempotência
 [✓] Etapa 11 APIs HTTP
-[ ] Etapa 12 Resiliência e observabilidade
+[✓] Etapa 12 Resiliência e observabilidade
 [ ] Etapa 13 Testes de carga
 [ ] Etapa 14 README final e revisão
 ```
@@ -176,7 +176,7 @@ mensagem que falha sempre chega à DLQ em tempo finito, sem laço quente.
 
 **Critério:** fluxo completo `POST /transactions` → `GET /daily-balances/{date}`.
 
-## Etapa 12 — Resiliência e observabilidade
+## Etapa 12 — Resiliência e observabilidade ✓
 
 - `ILogger` com saída JSON estruturada e correlation id ponta a ponta
 - Health checks `live` e `ready`
