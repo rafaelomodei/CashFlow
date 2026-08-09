@@ -211,6 +211,24 @@ extras, executados se sobrar tempo.
 
 **Critério:** clone limpo → `docker compose up -d` → sistema funcional.
 
+## Etapa 15 — Frontend de demonstração
+
+Inserida após o fechamento do roadmap original, e **executada antes da etapa 14**
+— o README final precisa descrever o sistema com a tela.
+
+Uma tela em React + TypeScript + Vite, servida por nginx, consumindo os dois
+contextos por um reverse proxy de mesma origem. Decisão, alternativas e regra de
+contenção em [ADR-015](./decisions/ADR-015-frontend.md).
+
+Ela não acrescenta requisito. Existe porque as duas propriedades mais importantes
+do sistema — degradação parcial (RNF-001) e consistência eventual (RNF-006) — são
+também as duas mais fáceis de confundir com defeito quando só existem como JSON.
+Um saldo que converge sozinho na tela, com "atualizado há 3 s" ao lado, é
+arquitetura demonstrada; o mesmo comportamento em uma resposta HTTP parece bug.
+
+**Critério:** sete containers no ar; com a Consolidation API parada, o lançamento
+continua funcionando e apenas o card de saldo exibe erro.
+
 ---
 
 ## Ordem de prioridade sob restrição de tempo

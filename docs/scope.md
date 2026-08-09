@@ -78,7 +78,7 @@ e o repositório já precisa da operação.
 | Contas bancárias | Fora | Não solicitado |
 | Cartões | Fora | Não solicitado |
 | Importação de arquivos (OFX/CSV) | Fora | Não solicitado |
-| Dashboard / frontend complexo | Fora | O desafio é de backend |
+| Dashboard / frontend complexo | Fora | O desafio é de backend. Entrou apenas uma **vitrine de demonstração** — ver §4.1 |
 | Relatórios financeiros avançados | Fora | Apenas o saldo diário foi pedido |
 | Permissões e roles | Fora | Consequência da ausência de autenticação |
 | Notificações | Fora | Não solicitado |
@@ -91,6 +91,30 @@ e o repositório já precisa da operação.
 > Itens fora de escopo que consideramos arquiteturalmente interessantes são
 > registrados em "Melhorias futuras" no README, conforme o próprio enunciado
 > sugere.
+
+### 4.1 Frontend — o recorte que entrou
+
+A linha "Dashboard / frontend complexo" acima continua valendo e **não foi
+revogada**. Ela juntava duas coisas em uma palavra, e a etapa 15 as separa
+([ADR-015](./decisions/ADR-015-frontend.md)):
+
+| Entra | Continua fora |
+|-------|---------------|
+| Uma tela consumindo os endpoints que já existem | Múltiplas telas, navegação, rotas |
+| Formulário de lançamento, tabela, card de saldo | Gráficos, relatórios, exportação |
+| Filtros que o contrato já oferece (`startDate`, `endDate`, data do saldo) | Qualquer filtro que exija mudar o contrato |
+| Tokens visuais e ~6 componentes de UI locais | Biblioteca de componentes publicável |
+| Estados de carregamento, vazio e erro | Login, perfil, preferências, temas |
+
+O motivo de entrar não é funcional — é de **demonstração**. A consistência
+eventual ([ADR-006](./decisions/ADR-006-consistency.md)) e a degradação parcial
+(RNF-001) são as duas propriedades mais importantes do sistema e as duas mais
+fáceis de confundir com defeito quando só se vê JSON.
+
+A regra que impede isso de virar scope creep está na ADR-015 e é curta: o
+frontend não tem regra de negócio, não soma dinheiro, não muda contrato e não
+tem servidor próprio. Funcionalidade de tela que exija violar uma das quatro não
+entra.
 
 ## 5. Definition of Done do projeto
 

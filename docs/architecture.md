@@ -34,6 +34,8 @@ A linha tracejada é intencional: é a única ligação entre os dois contextos,
 
 ```mermaid
 graph TD
+    FE["Frontend<br/>React + nginx<br/>estático + reverse proxy"]
+
     subgraph CashFlowCtx["Contexto: Lançamentos"]
         API1["Cash Flow API<br/>ASP.NET Core"]
         DB1[("PostgreSQL<br/>cashflow_db<br/>transactions + outbox")]
@@ -54,7 +56,16 @@ graph TD
 
     PUB -->|publica| MQ
     MQ -->|consome| WK
+
+    FE -->|"/api/cashflow/*"| API1
+    FE -->|"/api/consolidation/*"| API2
 ```
+
+O frontend é o **único componente que fala com os dois contextos**, e isso não
+contradiz §2: a proibição é de um serviço depender do outro em tempo de
+requisição. Um cliente que conhece dois endereços não cria essa dependência — se
+a Consolidation API cair, o card de saldo exibe erro e o formulário de lançamento
+continua funcionando. Ver [ADR-015](./decisions/ADR-015-frontend.md).
 
 ### Componentes
 
@@ -67,6 +78,7 @@ graph TD
 | Consolidation Worker | Consumir eventos e atualizar saldos | Sim — eventos ficam na fila |
 | `consolidation_db` | Saldos diários + controle de idempotência | Sim |
 | Consolidation API | Expor o saldo consolidado | Sim |
+| Frontend | Servir a tela e encaminhar `/api/*` às duas APIs | Sim — a tela sobe e exibe erro por região |
 
 **Somente os dois primeiros são caminho crítico.** Essa coluna é a materialização
 de RNF-001.
