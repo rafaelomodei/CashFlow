@@ -64,11 +64,8 @@ public sealed class Transaction
 
         var normalizedDescription = Normalize(description);
 
-        // Identificador ordenável no tempo: o índice de paginação é
-        // (occurred_at DESC, id DESC), e um id sequencial evita a fragmentação
-        // que um GUID aleatório causaria nesse índice (ADR-014).
         return new Transaction(
-            Guid.CreateVersion7(),
+            Guid.NewGuid(),
             amount,
             type,
             occurredAt.ToUniversalTime(),

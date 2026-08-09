@@ -39,12 +39,12 @@ public class ConsolidateTransactionUseCaseTests
         Guid? eventId = null) =>
         new()
         {
-            EventId = eventId ?? Guid.CreateVersion7(),
+            EventId = eventId ?? Guid.NewGuid(),
             OccurredAt = DateTimeOffset.UtcNow,
-            CorrelationId = Guid.CreateVersion7(),
+            CorrelationId = Guid.NewGuid(),
             Data = new TransactionRegisteredData
             {
-                TransactionId = Guid.CreateVersion7(),
+                TransactionId = Guid.NewGuid(),
                 Type = type,
                 Amount = amount,
                 OccurredAt = occurredAt ?? OccurredAt,

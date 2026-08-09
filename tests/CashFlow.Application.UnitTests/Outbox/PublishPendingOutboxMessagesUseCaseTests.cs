@@ -24,7 +24,7 @@ public class PublishPendingOutboxMessagesUseCaseTests
     }
 
     private static OutboxMessage PendingMessage() =>
-        OutboxMessage.Create(Guid.CreateVersion7(), "TransactionRegistered", "{}", DateTimeOffset.UtcNow);
+        OutboxMessage.Create(Guid.NewGuid(), "TransactionRegistered", "{}", DateTimeOffset.UtcNow);
 
     private void OutboxHas(params OutboxMessage[] messages) =>
         _outbox.GetPendingAsync(Arg.Any<int>(), Arg.Any<CancellationToken>()).Returns(messages);

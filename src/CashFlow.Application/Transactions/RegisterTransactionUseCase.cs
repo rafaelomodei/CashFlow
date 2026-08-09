@@ -54,7 +54,7 @@ public sealed class RegisterTransactionUseCase
     private static OutboxMessage BuildEvent(Transaction transaction, Guid correlationId)
     {
         var emittedAt = DateTimeOffset.UtcNow;
-        var eventId = Guid.CreateVersion7();
+        var eventId = Guid.NewGuid();
 
         var integrationEvent = new TransactionRegisteredEvent
         {

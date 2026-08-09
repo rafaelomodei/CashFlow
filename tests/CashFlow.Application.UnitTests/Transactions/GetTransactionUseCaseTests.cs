@@ -47,7 +47,7 @@ public class GetTransactionUseCaseTests
         _transactions.GetByIdAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>())
             .Returns((Transaction?)null);
 
-        var result = await _useCase.Handle(Guid.CreateVersion7(), CancellationToken.None);
+        var result = await _useCase.Handle(Guid.NewGuid(), CancellationToken.None);
 
         result.Should().BeNull();
     }

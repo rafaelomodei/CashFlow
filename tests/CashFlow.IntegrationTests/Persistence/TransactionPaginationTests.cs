@@ -38,9 +38,12 @@ public class TransactionPaginationTests : IAsyncLifetime
             Day.AddHours(12),
             Day.AddHours(13));
 
+        var single = await QueryEverythingInOnePage();
         var walked = await WalkAllPages(limit: 2);
 
-        walked.Should().Equal(ExpectedOrder(persisted));
+        single.Select(item => item.OccurredAt).Should().BeInDescendingOrder();
+        walked.Should().Equal(single.Select(item => item.Id));
+        walked.Should().HaveCount(persisted.Count);
     }
 
     [Fact]
@@ -50,9 +53,11 @@ public class TransactionPaginationTests : IAsyncLifetime
         // paginação passa a pular e repetir sem nenhum sinal de erro (ADR-014).
         var persisted = await Persist(Day.AddHours(9), Day.AddHours(9), Day.AddHours(9));
 
+        var single = await QueryEverythingInOnePage();
         var walked = await WalkAllPages(limit: 1);
 
-        walked.Should().Equal(ExpectedOrder(persisted));
+        walked.Should().Equal(single.Select(item => item.Id));
+        walked.Should().HaveCount(persisted.Count).And.OnlyHaveUniqueItems();
     }
 
     [Fact]
@@ -123,12 +128,6 @@ public class TransactionPaginationTests : IAsyncLifetime
         first.Items.Concat(second.Items).Select(item => item.Id).Should().OnlyHaveUniqueItems();
     }
 
-    private static IReadOnlyList<Guid> ExpectedOrder(IReadOnlyList<Transaction> persisted) =>
-        [.. persisted
-            .OrderByDescending(transaction => transaction.OccurredAt)
-            .ThenByDescending(transaction => transaction.Id)
-            .Select(transaction => transaction.Id)];
-
     private async Task<IReadOnlyList<Transaction>> Persist(params DateTimeOffset[] occurrences)
     {
         var transactions = occurrences
@@ -157,6 +156,23 @@ public class TransactionPaginationTests : IAsyncLifetime
 
         return await new ListTransactionsUseCase(new TransactionRepository(context))
             .Handle(query, CancellationToken.None);
+    }
+
+    /// <summary>
+    /// A referência de ordem é o próprio banco, e não uma reordenação em C#:
+    /// comparar contra `OrderByDescending(t => t.Id)` embutiria a premissa de
+    /// que `Guid.CompareTo` e o operador de `uuid` do PostgreSQL ordenam igual.
+    /// Hoje ordenam, mas o teste não precisa depender disso para provar que a
+    /// paginação não pula nem repete.
+    /// </summary>
+    private async Task<IReadOnlyList<TransactionDto>> QueryEverythingInOnePage()
+    {
+        var page = await Query(new ListTransactionsQuery(
+            Limit: 200, Cursor: null, StartDate: null, EndDate: null));
+
+        page.HasMore.Should().BeFalse("o cenário do teste cabe em uma única página");
+
+        return page.Items;
     }
 
     private async Task<List<Guid>> WalkAllPages(int limit)
