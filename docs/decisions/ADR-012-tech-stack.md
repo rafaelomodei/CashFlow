@@ -2,6 +2,8 @@
 
 - **Status:** Aceito
 - **Data:** 2026-08-08
+- **Revisado em:** 2026-08-09 — FluentValidation e Serilog saem da stack.
+  Ver [Revisão](#revisão-2026-08-09)
 - **Decisores:** rafaelomodei
 
 ## Contexto
@@ -16,7 +18,7 @@ testabilidade avaliadas pelo desafio.
 |------|---------|---------------|
 | Runtime | **.NET 10** | Versão **LTS** ativa no início do desenvolvimento; janela de suporte longa e sem migração forçada no meio do projeto |
 | Estilo de API | **Controllers** | Fronteira explícita entre HTTP e aplicação, alinhada às camadas de [ADR-001](./ADR-001-architecture.md) |
-| Validação | **FluentValidation** na borda | Mantém validação de entrada fora do domínio; regras de negócio permanecem nas entidades |
+| Validação | **Sem biblioteca** — checagem na borda e regra no domínio | A validação que importa (valor, tipo, período) já vive no domínio e nos casos de uso e sobe como exceção; na borda restam formato de data e campo obrigatório. Ver Revisão |
 | ORM | **EF Core 10** + Npgsql | Migrations e `DbContext` como Unit of Work — ver [ADR-005](./ADR-005-database.md) |
 | Mensageria | **RabbitMQ.Client** | Cliente oficial, controle explícito de ack, confirms e DLQ — ver [ADR-003](./ADR-003-messaging.md) |
 | Workers | **`BackgroundService`** | Hospedagem nativa, sem framework adicional |
@@ -80,3 +82,23 @@ RT-001, RT-003, RT-004, RT-005, RNF-010
 
 - `dotnet --version` compatível com o `global.json` do repositório.
 - O projeto compila e os testes rodam sem dependências além de .NET SDK e Docker.
+
+---
+
+## Revisão (2026-08-09)
+
+**O que mudou:** duas linhas da tabela de stack. Serilog deu lugar a `ILogger` com
+`AddJsonConsole` ([ADR-011](./ADR-011-observability.md)), e FluentValidation saiu
+sem substituto.
+
+**Por quê (validação):** a tabela previa validação na borda antes de existir
+domínio. Quando ele existiu, a validação de valor, tipo e período passou a viver
+nele e nos casos de uso, e a subir como exceção que o middleware traduz em `400`.
+O que restou na borda são três checagens de formato — campo obrigatório, instante
+com offset e data `YYYY-MM-DD`. Uma biblioteca de validação para isso duplicaria
+a regra em dois lugares, que é justamente o que se quer evitar em domínio
+financeiro: duas verdades divergem na primeira mudança.
+
+**O que não mudou:** o resto da stack, e a intenção original — validação de
+entrada fora do domínio, regra de negócio dentro dele. É exatamente o que
+acontece; só não precisou de biblioteca.

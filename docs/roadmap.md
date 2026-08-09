@@ -21,7 +21,7 @@
 [✓] Etapa 8  Infraestrutura de lançamentos
 [✓] Etapa 9  Mensageria e outbox
 [✓] Etapa 10 Consolidação e idempotência
-[ ] Etapa 11 APIs HTTP
+[✓] Etapa 11 APIs HTTP
 [ ] Etapa 12 Resiliência e observabilidade
 [ ] Etapa 13 Testes de carga
 [ ] Etapa 14 README final e revisão
@@ -168,7 +168,7 @@ ADR-003 quando o consumidor for implementado.
 **Critério:** mesmo evento publicado N vezes altera o saldo uma única vez, e uma
 mensagem que falha sempre chega à DLQ em tempo finito, sem laço quente.
 
-## Etapa 11 — APIs HTTP
+## Etapa 11 — APIs HTTP ✓
 
 - Endpoints, validação de entrada, Problem Details
 - Swagger

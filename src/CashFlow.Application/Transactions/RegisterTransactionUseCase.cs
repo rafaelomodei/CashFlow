@@ -37,7 +37,7 @@ public sealed class RegisterTransactionUseCase
         var transaction = Transaction.Create(
             Money.Create(command.Amount),
             TransactionTypes.Parse(command.Type),
-            command.OccurredAt ?? DateTimeOffset.UtcNow,
+            command.OccurredAt,
             command.Description);
 
         await _transactions.AddAsync(transaction, cancellationToken);

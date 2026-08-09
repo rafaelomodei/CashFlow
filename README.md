@@ -7,20 +7,21 @@ e relatório de saldo diário consolidado.
 
 ## Status
 
-**Etapa atual: 8 — Infraestrutura de lançamentos**
+**Etapa atual: 12 — Resiliência e observabilidade**
 
 ```
 ✅ Requisitos          etapas 1–2
 ✅ Arquitetura         etapas 3, 5
 ✅ Contratos           etapa 4
-🔨 Implementação       domínio e casos de uso prontos (etapas 6–7);
-                       persistência do contexto de lançamentos em andamento
-⬜ Endpoints HTTP      etapa 11
-⬜ Mensageria          etapas 9–10
+✅ Implementação       domínio, casos de uso e persistência (etapas 6–8)
+✅ Mensageria          outbox, publicação e consumo idempotente (etapas 9–10)
+✅ Endpoints HTTP      as duas APIs, com OpenAPI (etapa 11)
+🔨 Resiliência         cenários de falha e health checks (etapa 12)
+⬜ Carga               k6 (etapa 13)
 ```
 
-181 testes automatizados verdes: domínio, casos de uso, fronteiras
-arquiteturais e integração com PostgreSQL real. As seções marcadas com ⏳ são
+253 testes automatizados verdes, incluindo o fluxo completo
+`POST /transactions` → RabbitMQ → worker → `GET /daily-balances/{date}`. As seções marcadas com ⏳ são
 preenchidas conforme as etapas avançam.
 
 | Visão | Documento |
@@ -142,8 +143,9 @@ Para reiniciar do zero: `docker compose down -v && docker compose up -d`.
 
 O ambiente completo ocioso consome cerca de 240 MiB somando os seis containers.
 
-⏳ *Os endpoints entram na etapa 11 do [roadmap](./docs/roadmap.md); hoje os
-serviços sobem e expõem apenas a especificação OpenAPI.*
+As duas APIs expõem Swagger UI em `/swagger` e a especificação OpenAPI em
+`/openapi/v1.json` fora de produção. As migrations são aplicadas na inicialização,
+então um clone limpo sobe funcional com um comando só.
 
 ### Testes
 
@@ -188,7 +190,8 @@ Erros seguem [Problem Details (RFC 7807)](https://www.rfc-editor.org/rfc/rfc7807
 sempre com o `correlationId` que permite rastrear a requisição pelos quatro
 processos do fluxo.
 
-⏳ *Especificação OpenAPI gerada do código a partir da etapa 11.*
+A especificação OpenAPI é gerada do código e conferida contra este contrato por
+teste de integração — divergência entre os dois é defeito, não evolução.
 
 ## Decisões arquiteturais
 
@@ -235,9 +238,10 @@ Estado atual da suíte:
 
 | Categoria | Testes | O que cobre |
 |-----------|--------|-------------|
-| Unitários | 141 | Domínio (RN-001 a RN-004) e casos de uso com dublês |
+| Unitários | 143 | Domínio (RN-001 a RN-004) e casos de uso com dublês |
 | Arquitetura | 20 | Fronteiras entre camadas e entre os dois contextos |
-| Integração | 20 | Persistência contra PostgreSQL real, via Testcontainers |
+| Integração | 88 | Banco, broker e endpoints reais, via Testcontainers |
+| Ponta a ponta | 2 | O sistema inteiro, os dois contextos juntos |
 
 ## Performance
 

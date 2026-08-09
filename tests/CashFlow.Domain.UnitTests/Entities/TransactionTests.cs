@@ -74,12 +74,24 @@ public class TransactionTests
     }
 
     [Fact]
-    public void Create_WithoutOccurredAt_ShouldThrowDomainException()
+    public void Create_WithTheZeroInstant_ShouldThrowDomainException()
     {
-        var act = () => Transaction.Create(Money.Create(1500.00m), TransactionType.Credit, default, null);
+        var act = () => Transaction.Create(
+            Money.Create(1500.00m), TransactionType.Credit, default(DateTimeOffset), null);
 
         act.Should().Throw<InvalidOccurrenceDateException>()
             .WithMessage("OccurredAt is required.");
+    }
+
+    [Fact]
+    public void Create_WithoutOccurredAt_ShouldUseTheRegistrationInstant()
+    {
+        var transaction = Transaction.Create(Money.Create(1500.00m), TransactionType.Credit, null, null);
+
+        // Exatamente igual, e não aproximadamente: o contrato promete a igualdade
+        // (§2.1, premissa P-08), e é ela que permite ao cliente distinguir um
+        // instante informado de um instante assumido pelo servidor.
+        transaction.OccurredAt.Should().Be(transaction.CreatedAt);
     }
 
     [Fact]
