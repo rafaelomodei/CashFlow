@@ -17,6 +17,7 @@ builder.Services.Configure<ApiBehaviorOptions>(options => options.SuppressModelS
 
 builder.Services.AddOpenApi();
 builder.Services.AddCashFlowInfrastructure(builder.Configuration);
+builder.Services.AddCashFlowHealthChecks();
 
 var app = builder.Build();
 
@@ -32,6 +33,7 @@ if (!app.Environment.IsProduction())
     app.UseSwaggerUI(options => options.SwaggerEndpoint("/openapi/v1.json", "Cash Flow API"));
 }
 
+app.MapCashFlowHealthChecks();
 app.MapControllers();
 
 await app.RunAsync();

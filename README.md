@@ -7,7 +7,7 @@ e relatório de saldo diário consolidado.
 
 ## Status
 
-**Etapa atual: 12 — Resiliência e observabilidade**
+**Etapa atual: 13 — Testes de carga**
 
 ```
 ✅ Requisitos          etapas 1–2
@@ -16,11 +16,11 @@ e relatório de saldo diário consolidado.
 ✅ Implementação       domínio, casos de uso e persistência (etapas 6–8)
 ✅ Mensageria          outbox, publicação e consumo idempotente (etapas 9–10)
 ✅ Endpoints HTTP      as duas APIs, com OpenAPI (etapa 11)
-🔨 Resiliência         cenários de falha e health checks (etapa 12)
-⬜ Carga               k6 (etapa 13)
+✅ Resiliência         cenários de falha executados e health checks (etapa 12)
+🔨 Carga               k6 (etapa 13)
 ```
 
-253 testes automatizados verdes, incluindo o fluxo completo
+256 testes automatizados verdes, incluindo o fluxo completo
 `POST /transactions` → RabbitMQ → worker → `GET /daily-balances/{date}`. As seções marcadas com ⏳ são
 preenchidas conforme as etapas avançam.
 
@@ -222,7 +222,14 @@ defeito. Detalhes e garantias: [ADR-006](./docs/decisions/ADR-006-consistency.md
 | RabbitMQ | ✅ funciona | ⚠️ dados defasados |
 
 Nenhuma falha do lado da consolidação impede o registro de lançamentos, e nenhum
-evento é perdido — apenas atrasado.
+evento é perdido — apenas atrasado. Os quatro cenários foram **executados** com
+`docker compose`, e os resultados estão em
+[`architecture.md`](./docs/architecture.md) §6.
+
+Health checks em `/health/live` e `/health/ready` nas duas APIs. O `ready` da Cash
+Flow API não considera o RabbitMQ de propósito: marcá-la como não-pronta com o
+broker fora faria um orquestrador retirá-la de serviço, produzindo justamente a
+indisponibilidade que RNF-001 pede para evitar.
 
 ## Testes
 
@@ -240,7 +247,7 @@ Estado atual da suíte:
 |-----------|--------|-------------|
 | Unitários | 143 | Domínio (RN-001 a RN-004) e casos de uso com dublês |
 | Arquitetura | 20 | Fronteiras entre camadas e entre os dois contextos |
-| Integração | 88 | Banco, broker e endpoints reais, via Testcontainers |
+| Integração | 91 | Banco, broker e endpoints reais, via Testcontainers |
 | Ponta a ponta | 2 | O sistema inteiro, os dois contextos juntos |
 
 ## Performance

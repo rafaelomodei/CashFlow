@@ -123,7 +123,7 @@ public class TransactionRegisteredConsumerTests : IAsyncLifetime
     }
 
     [Fact]
-    public async Task TransientFailure_ShouldRetryWithRealWaitAndThenDeadLetter()
+    public async Task DatabaseOutage_ShouldRetryWithRealWaitAndKeepTheMessageInTheQueue()
     {
         await _fixture.PublishAsync(ConsumerFixture.Event(Guid.NewGuid(), 10.00m, "CREDIT", Occurrence));
 
@@ -134,17 +134,40 @@ public class TransactionRegisteredConsumerTests : IAsyncLifetime
         };
 
         var elapsed = Stopwatch.StartNew();
-        await RunConsumerUntil(
-            async () => await _fixture.DeadLetterCountAsync() == 1,
+        await RunConsumerFor(
+            TimeSpan.FromSeconds(5),
             options,
-            // Banco inalcançável: falha transitória do ponto de vista do consumidor,
-            // que é exatamente o caso em que retentar faz sentido.
             databaseConnectionString: "Host=127.0.0.1;Port=1;Database=x;Username=x;Password=x;Timeout=1");
         elapsed.Stop();
 
-        // Duas esperas entre três tentativas. Se o retry fosse imediato, a mensagem
-        // chegaria à DLQ em milissegundos — o laço quente que a ADR-003 descreve.
+        // Duas esperas entre três tentativas por passagem. Se o retry fosse
+        // imediato, isto seria o laço quente que a ADR-003 descreve.
         elapsed.Elapsed.Should().BeGreaterThan(TimeSpan.FromSeconds(1));
+
+        // E, principalmente: a mensagem **não** foi para a DLQ. A DLQ é para
+        // mensagem problemática, não para infraestrutura fora do ar — mandar para
+        // lá um evento válido porque o banco caiu por meio minuto tornaria a
+        // recuperação manual, contra RNF-004 e RNF-007.
+        (await _fixture.DeadLetterCountAsync()).Should().Be(0);
+    }
+
+    [Fact]
+    public async Task AfterTheDatabaseComesBack_TheRequeuedMessageShouldBeConsolidated()
+    {
+        await _fixture.PublishAsync(ConsumerFixture.Event(Guid.NewGuid(), 60.00m, "CREDIT", Occurrence));
+
+        await RunConsumerFor(
+            TimeSpan.FromSeconds(3),
+            databaseConnectionString: "Host=127.0.0.1;Port=1;Database=x;Username=x;Password=x;Timeout=1");
+
+        (await BalanceOf(Day)).Should().BeNull("o banco estava fora do ar");
+
+        // Sem nenhuma intervenção: o consumidor volta e encontra a mensagem onde
+        // ela ficou.
+        await RunConsumerUntil(async () => await BalanceOf(Day) is not null);
+
+        (await BalanceOf(Day))!.TotalCredits.Amount.Should().Be(60.00m);
+        (await _fixture.DeadLetterCountAsync()).Should().Be(0);
     }
 
     private async Task<Domain.Entities.DailyBalance?> BalanceOf(DateOnly date)
@@ -166,6 +189,19 @@ public class TransactionRegisteredConsumerTests : IAsyncLifetime
         await Task.Delay(TimeSpan.FromMilliseconds(300));
 
         return true;
+    }
+
+    private async Task RunConsumerFor(
+        TimeSpan duration,
+        TransactionConsumerOptions? options = null,
+        string? databaseConnectionString = null)
+    {
+        await using var provider = _fixture.BuildConsumer(options, databaseConnectionString);
+        var consumer = provider.GetRequiredService<TransactionRegisteredConsumer>();
+
+        await consumer.StartAsync(CancellationToken.None);
+        await Task.Delay(duration);
+        await consumer.StopAsync(CancellationToken.None);
     }
 
     private async Task RunConsumerUntil(

@@ -83,6 +83,12 @@ services:
       RabbitMq__Password: ${RABBITMQ_PASSWORD}
     ports:
       - "${CASHFLOW_API_PORT}:8080"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://localhost:8080/health/ready || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
     depends_on:
       cashflow-db:
         condition: service_healthy
@@ -99,6 +105,12 @@ services:
       ConnectionStrings__ConsolidationDb: Host=consolidation-db;Port=5432;Database=${CONSOLIDATION_DB_NAME};Username=${CONSOLIDATION_DB_USER};Password=${CONSOLIDATION_DB_PASSWORD}
     ports:
       - "${CONSOLIDATION_API_PORT}:8080"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://localhost:8080/health/ready || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
     depends_on:
       consolidation-db:
         condition: service_healthy
@@ -118,6 +130,8 @@ services:
       RabbitMq__Password: ${RABBITMQ_PASSWORD}
     depends_on:
       consolidation-db:
+        condition: service_healthy
+      consolidation-api:
         condition: service_healthy
     networks: [cashflow-net]
 

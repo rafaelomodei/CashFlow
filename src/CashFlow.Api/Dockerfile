@@ -22,6 +22,12 @@ FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS final
 WORKDIR /app
 COPY --from=build /app .
 
+# A imagem de runtime não traz cliente HTTP algum, e sem um deles o `healthcheck`
+# do Compose não tem como perguntar nada ao processo.
+RUN apt-get update \
+    && apt-get install --no-install-recommends -y curl \
+    && rm -rf /var/lib/apt/lists/*
+
 USER $APP_UID
 EXPOSE 8080
 ENTRYPOINT ["dotnet", "CashFlow.Api.dll"]

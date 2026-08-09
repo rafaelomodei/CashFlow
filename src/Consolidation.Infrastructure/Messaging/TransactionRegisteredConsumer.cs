@@ -1,3 +1,4 @@
+using System.Data.Common;
 using System.Text;
 using System.Text.Json;
 using Consolidation.Application.Balances;
@@ -134,6 +135,23 @@ public sealed class TransactionRegisteredConsumer : BackgroundService
 
                 if (attempt == _options.MaxAttempts)
                 {
+                    if (IsInfrastructureOutage(exception))
+                    {
+                        // A DLQ é para mensagem problemática, não para
+                        // indisponibilidade de infraestrutura. Um banco fora do ar
+                        // por mais tempo que a janela de retry mandaria para lá
+                        // eventos perfeitamente válidos, e a recuperação deixaria
+                        // de ser automática — contrariando a promessa de perda
+                        // zero (RNF-004, RNF-007). Devolvida à fila, a mensagem
+                        // espera o banco voltar.
+                        _logger.LogWarning(
+                            exception, "Infrastructure is unavailable; returning the message to the queue");
+                        await channel.BasicNackAsync(
+                            delivery.DeliveryTag, multiple: false, requeue: true, stoppingToken);
+
+                        return;
+                    }
+
                     break;
                 }
 
@@ -146,6 +164,26 @@ public sealed class TransactionRegisteredConsumer : BackgroundService
 
         _logger.LogError("Exhausted {MaxAttempts} attempts; sending to the dead-letter queue", _options.MaxAttempts);
         await channel.BasicNackAsync(delivery.DeliveryTag, multiple: false, requeue: false, stoppingToken);
+    }
+
+    /// <summary>
+    /// Distingue "esta mensagem é ruim" de "o mundo em volta está fora do ar".
+    ///
+    /// `DbException.IsTransient` é o próprio provedor dizendo que a falha é de
+    /// conectividade e não da instrução — é a informação que separa um evento
+    /// que nunca vai funcionar de um que vai funcionar assim que o banco voltar.
+    /// </summary>
+    private static bool IsInfrastructureOutage(Exception exception)
+    {
+        for (var current = exception; current is not null; current = current.InnerException)
+        {
+            if (current is DbException { IsTransient: true })
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /// <summary>

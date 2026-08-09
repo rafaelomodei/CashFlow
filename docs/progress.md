@@ -7,7 +7,7 @@
 > Regra de uso: **este arquivo é atualizado no mesmo Pull Request que entrega o
 > item**. Checkbox marcado sem entrega correspondente é ruído, não progresso.
 
-**Etapa atual: 12 — Resiliência e observabilidade**
+**Etapa atual: 13 — Testes de carga**
 
 ## Progresso macro
 
@@ -23,7 +23,7 @@
 [x] Etapa 9  Mensageria e outbox
 [x] Etapa 10 Consolidação e idempotência
 [x] Etapa 11 APIs HTTP
-[ ] Etapa 12 Resiliência e observabilidade
+[x] Etapa 12 Resiliência e observabilidade
 [ ] Etapa 13 Testes de carga
 [ ] Etapa 14 README final e revisão
 ```
@@ -683,20 +683,38 @@ Legenda: `[x]` concluída · `[~]` em andamento · `[ ]` pendente
 > porque a integração entre eles não cabe em nenhum dos dois lados. Os projetos de
 > produção continuam sem se referenciar.
 
-## Etapa 12 — Resiliência e observabilidade
+## Etapa 12 — Resiliência e observabilidade ✅
 
-- [ ] `ILogger` com saída estruturada em JSON (`AddJsonConsole`)
-- [ ] `correlationId` gerado ou propagado na entrada da API
-- [ ] `correlationId` propagado até o outbox
-- [ ] `correlationId` propagado no envelope do evento
-- [ ] `correlationId` propagado no worker
-- [ ] Health check `live` em cada serviço
-- [ ] Health check `ready` verificando dependências
-- [ ] Executar o cenário: Consolidation API fora do ar
-- [ ] Executar o cenário: Consolidation Worker fora do ar
-- [ ] Executar o cenário: `consolidation_db` fora do ar
-- [ ] Executar o cenário: RabbitMQ fora do ar
-- [ ] Documentar os resultados contra a tabela de [`architecture.md`](./architecture.md) §6
+- [x] `ILogger` com saída estruturada em JSON (`AddJsonConsole`)
+- [x] `correlationId` gerado ou propagado na entrada da API
+- [x] `correlationId` propagado até o outbox
+- [x] `correlationId` propagado no envelope do evento
+- [x] `correlationId` propagado no worker
+- [x] Health check `live` em cada API
+- [x] Health check `ready` verificando dependências
+- [x] Executar o cenário: Consolidation API fora do ar
+- [x] Executar o cenário: Consolidation Worker fora do ar
+- [x] Executar o cenário: `consolidation_db` fora do ar
+- [x] Executar o cenário: RabbitMQ fora do ar
+- [x] Documentar os resultados contra a tabela de [`architecture.md`](./architecture.md) §6
+
+> Os cenários encontraram um defeito real. Com o `consolidation_db` fora do ar por
+> 40 segundos, o evento ia para a DLQ e o saldo não convergia: a janela de retry
+> do consumidor era menor que a queda. A DLQ é para mensagem problemática, não
+> para infraestrutura indisponível — um evento válido não pode virar trabalho
+> manual porque o banco piscou. O consumidor passou a distinguir os dois casos por
+> `DbException.IsTransient` e devolve a mensagem à fila quando a falha é de
+> conectividade.
+>
+> O worker não tem endpoint de health. Ele não expõe HTTP, e acrescentar um
+> servidor só para responder "estou vivo" repetiria o que o Docker já sabe pelo
+> estado do container. O que um `ready` de worker acrescentaria — "vivo mas
+> travado" — já é observável pelos sinais que a ADR-011 lista: profundidade da
+> fila e defasagem de `updatedAt`.
+>
+> A imagem de runtime não trazia cliente HTTP, então o `healthcheck` do Compose
+> não tinha como perguntar nada ao processo. Os Dockerfiles das APIs passaram a
+> instalar `curl`.
 
 ## Etapa 13 — Testes de carga
 
