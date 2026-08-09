@@ -14,6 +14,7 @@ builder.Services.Configure<ApiBehaviorOptions>(options => options.SuppressModelS
 
 builder.Services.AddOpenApi();
 builder.Services.AddConsolidationPersistence(builder.Configuration);
+builder.Services.AddConsolidationHealthChecks();
 
 var app = builder.Build();
 
@@ -29,6 +30,7 @@ if (!app.Environment.IsProduction())
     app.UseSwaggerUI(options => options.SwaggerEndpoint("/openapi/v1.json", "Consolidation API"));
 }
 
+app.MapConsolidationHealthChecks();
 app.MapControllers();
 
 await app.RunAsync();
