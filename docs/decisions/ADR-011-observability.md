@@ -2,6 +2,8 @@
 
 - **Status:** Aceito
 - **Data:** 2026-08-08
+- **Revisado em:** 2026-08-09 — os três mecanismos permanecem; o log estruturado
+  deixa de exigir Serilog. Ver [Revisão](#revisão-2026-08-09).
 - **Decisores:** rafaelomodei
 
 ## Contexto
@@ -18,22 +20,41 @@ manualmente — inviável e não demonstrável.
 
 Três mecanismos, escolhidos pelo custo/benefício dentro do escopo:
 
-### 1. Logs estruturados (Serilog)
+### 1. Logs estruturados (`ILogger` + JSON console)
 
-Log em JSON, com propriedades consultáveis em vez de texto interpolado:
+O `ILogger<T>` do próprio ASP.NET Core, com `AddJsonConsole()`. O que importa é a
+**saída estruturada**, não a biblioteca que a produz — e o template de mensagem do
+`ILogger` já preserva as propriedades:
+
+```csharp
+logger.LogInformation(
+    "Transaction {TransactionId} registered as {Type} for {Amount}",
+    transaction.Id, type, amount);
+```
+
+A saída é JSON por linha, com as propriedades do template preservadas em `State`
+em vez de já interpoladas na mensagem:
 
 ```json
 {
-  "timestamp": "2026-08-08T14:32:11.482Z",
-  "level": "Information",
-  "message": "Transaction registered",
-  "correlationId": "b1f2...",
-  "transactionId": "6c6a...",
-  "type": "CREDIT",
-  "amount": 1500.00,
-  "service": "cashflow-api"
+  "Timestamp": "2026-08-08T14:32:11.4820000+00:00",
+  "LogLevel": "Information",
+  "Category": "CashFlow.Api.TransactionsController",
+  "Message": "Transaction 6c6a... registered as CREDIT for 1500.00",
+  "State": {
+    "TransactionId": "6c6a...",
+    "Type": "CREDIT",
+    "Amount": 1500.00,
+    "{OriginalFormat}": "Transaction {TransactionId} registered as {Type} for {Amount}"
+  },
+  "Scopes": [{ "CorrelationId": "b1f2..." }]
 }
 ```
+
+O formato é o do próprio runtime — mais verboso que o de um Serilog configurado à
+mão, e é o preço de não trazer a dependência. O `correlationId` viaja em escopo
+(`ILogger.BeginScope`), e não como argumento repetido em cada chamada: assim ele
+acompanha **todo** log da requisição, inclusive os que o framework emite.
 
 Regras:
 
@@ -91,9 +112,10 @@ Health check e `depends_on` precisam contar a mesma história.
 
 | Alternativa | Prós | Contras | Veredito |
 |-------------|------|---------|----------|
-| Serilog + correlation + health checks | Baixo custo, alto retorno, sem infra extra | Sem métricas nem tracing visual | **Escolhida** |
+| `ILogger` + `AddJsonConsole` + correlation + health checks | Saída estruturada sem dependência externa; já vem no runtime | Menos recursos de *sink* que Serilog | **Escolhida** |
+| Serilog + correlation + health checks | Ecossistema de sinks maduro, enrichers prontos | Dependência externa para um ganho que este escopo não usa: um único sink, console | Rejeitada — era a escolha original, revista em 2026-08-09 |
 | Stack completa OpenTelemetry + Jaeger + Prometheus + Grafana | Observabilidade de produção real | Quatro containers a mais para um sistema de dois serviços; desvia o foco da avaliação | Rejeitada — registrada como melhoria futura |
-| Apenas `ILogger` padrão com texto | Zero configuração | Log não consultável; sem correlação | Rejeitada |
+| `ILogger` com saída de **texto** | Zero configuração | Log não consultável; sem correlação | Rejeitada |
 | APM comercial (Datadog, New Relic) | Completo | Dependência externa; quebra a execução local autônoma | Rejeitada |
 
 Instrumentação **OpenTelemetry-ready** é adotada onde não custa nada (uso de
@@ -108,13 +130,16 @@ configuração e não reescrita.
 - Os sinais monitorados tornam visível a saúde dos pontos que as outras ADRs criaram.
 - Health checks viabilizam `depends_on: service_healthy` no Compose para as
   dependências **obrigatórias** ([ADR-009](./ADR-009-containers.md)).
-- Custo de infraestrutura zero.
+- Custo de infraestrutura zero, e agora também zero dependência de log.
 
 **Negativas**
 
 - Sem métricas agregadas nem dashboards: diagnóstico depende de leitura de logs.
 - Sem tracing distribuído visual — a correlação é manual, por busca.
 - Log estruturado é mais verboso em volume de bytes.
+- `AddJsonConsole` tem um único destino, o console. Enviar log para arquivo,
+  Seq ou Elasticsearch exigiria trazer Serilog de volta — barato, porque o código
+  que chama `ILogger` não mudaria.
 
 ## Trade-off aceito
 
@@ -136,3 +161,32 @@ RNF-011, RNF-013
   publisher e do worker.
 - Derrubar o RabbitMQ e verificar que `/health/ready` da Cash Flow API segue `200`.
 - Derrubar o `cashflow-db` e verificar que `/health/ready` da mesma API passa a falhar.
+- Conferir que a saída de `docker compose logs cashflow-api` é JSON por linha, com
+  as propriedades do template como campos — e não texto já interpolado.
+
+---
+
+## Revisão (2026-08-09)
+
+**O que mudou:** o log estruturado passa a usar `ILogger` com `AddJsonConsole()`,
+em vez de Serilog. Correlation ID e health checks permanecem exatamente como
+estavam.
+
+**Por quê:** a decisão real desta ADR sempre foi *log estruturado com propriedades
+consultáveis*, e o Serilog entrou como o meio óbvio de chegar lá. Só que o
+`ILogger` do runtime já entrega isso: o template de mensagem preserva as
+propriedades e `AddJsonConsole` as serializa. O que o Serilog acrescentaria — o
+ecossistema de sinks — é justamente o que este escopo não usa, porque há um único
+destino, o console.
+
+A linha "apenas `ILogger` padrão com texto" da tabela de alternativas rejeitava a
+**saída em texto**, não o `ILogger`. A revisão corrige essa imprecisão: eram duas
+opções diferentes tratadas como uma.
+
+**Custo de reverter:** baixo, e essa é parte da justificativa. Trocar para Serilog
+depois é configuração no *composition root*; nenhuma chamada a `ILogger` no código
+de aplicação muda.
+
+**O que não mudou:** os três mecanismos da decisão, as regras de nível e de dado
+sensível, a proibição de o `ready` da Cash Flow API depender do broker, e os sinais
+mínimos monitorados.

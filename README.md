@@ -7,17 +7,20 @@ e relatório de saldo diário consolidado.
 
 ## Status
 
-**Etapa atual: 5 — Esqueleto da solução, ambiente e CI**
+**Etapa atual: 8 — Infraestrutura de lançamentos**
 
 ```
-✅ Requisitos
-✅ Arquitetura
-✅ Contratos
-⬜ Implementação
+✅ Requisitos          etapas 1–2
+✅ Arquitetura         etapas 3, 5
+✅ Contratos           etapa 4
+🔨 Implementação       domínio e casos de uso prontos (etapas 6–7);
+                       persistência do contexto de lançamentos em andamento
+⬜ Endpoints HTTP      etapa 11
+⬜ Mensageria          etapas 9–10
 ```
 
-Nenhum código de produção foi escrito ainda — por decisão registrada no
-[roadmap](./docs/roadmap.md), não por pendência. As seções marcadas com ⏳ são
+181 testes automatizados verdes: domínio, casos de uso, fronteiras
+arquiteturais e integração com PostgreSQL real. As seções marcadas com ⏳ são
 preenchidas conforme as etapas avançam.
 
 | Visão | Documento |
@@ -100,7 +103,7 @@ graph TD
 | Mensageria | RabbitMQ | [ADR-003](./docs/decisions/ADR-003-messaging.md) |
 | Testes | xUnit, FluentAssertions, NSubstitute, Testcontainers | [ADR-008](./docs/decisions/ADR-008-tdd.md) |
 | Carga | k6 | [ADR-010](./docs/decisions/ADR-010-performance-validation.md) |
-| Logs | Serilog | [ADR-011](./docs/decisions/ADR-011-observability.md) |
+| Logs | `ILogger` + JSON console | [ADR-011](./docs/decisions/ADR-011-observability.md) |
 | Ambiente | Docker + Docker Compose | [ADR-009](./docs/decisions/ADR-009-containers.md) |
 | CI | GitHub Actions | [`testing-strategy.md`](./docs/testing-strategy.md#integração-contínua) |
 
@@ -163,7 +166,7 @@ Contrato completo — DTOs, validações, códigos de erro e schema do evento:
 | `GET` | `/transactions/{id}` | Cash Flow | Consulta um lançamento |
 | `GET` | `/daily-balances/{date}` | Consolidation | Saldo consolidado do dia |
 
-A URL base de cada serviço é definida junto do ambiente, na etapa 5.
+A URL base de cada serviço vem da tabela de portas acima.
 
 ```bash
 curl -X POST "$CASHFLOW_API/transactions" \
@@ -228,14 +231,27 @@ O pipeline de CI roda `restore → build → unitários → arquitetura → inte
 todo Pull Request, e `master` só aceita merge com o pipeline verde. A garantia de
 qualidade é uma propriedade do repositório, não uma promessa desta seção.
 
-⏳ *Resultados e cobertura serão publicados aqui a partir da etapa 6.*
+Estado atual da suíte:
+
+| Categoria | Testes | O que cobre |
+|-----------|--------|-------------|
+| Unitários | 141 | Domínio (RN-001 a RN-004) e casos de uso com dublês |
+| Arquitetura | 20 | Fronteiras entre camadas e entre os dois contextos |
+| Integração | 20 | Persistência contra PostgreSQL real, via Testcontainers |
 
 ## Performance
 
 Requisito: 50 chamadas/s com perda máxima de 5%.
-Meta interna: erro HTTP < 1% e **perda de eventos igual a zero**.
+Meta interna: erro HTTP < 1%.
 
-Critérios e cenários: [ADR-010](./docs/decisions/ADR-010-performance-validation.md).
+"Chamadas" é ambíguo no enunciado — pode ser leitura do saldo ou ingestão de
+eventos. A interpretação principal adotada é a **leitura da consolidação sob
+carga**, medida com k6. A convergência ponta a ponta (lançamento → RabbitMQ →
+worker → saldo) é provada por teste funcional, que não precisa de carga para ser
+convincente. Carga de escrita e de ingestão são extras, executados se sobrar
+tempo.
+
+Critérios: [ADR-010](./docs/decisions/ADR-010-performance-validation.md).
 
 ⏳ *Resultados medidos serão publicados aqui na etapa 13.*
 

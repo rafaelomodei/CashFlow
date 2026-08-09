@@ -102,7 +102,7 @@ public class OutboxRepositoryTests : IAsyncLifetime
 
     private static OutboxMessage Message(DateTimeOffset occurredAt) =>
         OutboxMessage.Create(
-            Guid.CreateVersion7(),
+            Guid.NewGuid(),
             TransactionRegisteredEvent.Type,
             """{"eventType":"TransactionRegistered"}""",
             occurredAt);

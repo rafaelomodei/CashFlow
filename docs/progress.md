@@ -86,8 +86,8 @@ Legenda: `[x]` concluída · `[~]` em andamento · `[ ]` pendente
 - [x] Definir representação de `CREDIT` / `DEBIT` (RF-002, RN-002)
 - [x] Definir representação monetária no contrato (ADR-013, RN-001)
 - [x] Definir formato de `occurredAt` (ISO 8601 / UTC, premissa P-04)
-- [x] Definir política para lançamento retroativo (premissa P-06) — janela
-      configurável, premissa P-09
+- [x] Definir política para lançamento retroativo (premissa P-06) — sem teto de
+      retroatividade
 - [x] Definir comportamento com `occurredAt` ausente (premissa P-08)
 - [x] Definir resposta `201 Created`
 - [x] Definir header `Location`
@@ -364,9 +364,9 @@ Legenda: `[x]` concluída · `[~]` em andamento · `[ ]` pendente
 > — 22h em Brasília pertence ao dia seguinte —, de modo que a limitação de fuso
 > aceita pela ADR-013 fique exercitada, e não apenas descrita.
 >
-> A janela de retroatividade (premissa P-09) não está no domínio: seus limites
-> são configuráveis, e configuração não pertence a uma entidade. Ela é validação
-> de entrada, na etapa 11.
+> Não há janela de retroatividade: qualquer `occurredAt` válido é aceito. O teto
+> de 365 dias que o contrato previa era regra inventada por nós e foi removido
+> antes de virar código.
 
 ### `DailyBalance`
 
@@ -556,37 +556,6 @@ Legenda: `[x]` concluída · `[~]` em andamento · `[ ]` pendente
 - [x] Integração: inserção concorrente não duplica registro entre páginas (ADR-014)
 - [x] Integração: gravação atômica lançamento + outbox
 
-> A listagem é a única consulta em SQL literal. A comparação de tupla
-> `(occurred_at, id) < (@o, @i)` que a [ADR-014](./decisions/ADR-014-cursor-pagination.md)
-> escolheu não é traduzida a partir de LINQ, e reescrevê-la como
-> `a < @a OR (a = @a AND b < @b)` devolveria o mesmo resultado por um caminho que
-> o planejador nem sempre resolve pelo índice — que é a razão de o índice
-> existir. Com 50 000 linhas, o `EXPLAIN` da consulta traz
-> `Index Scan using ix_transactions_occurred_at_id` com
-> `Index Cond: ROW(occurred_at, id) < ROW(...)`: seek, e não varredura. Todo
-> valor viaja como parâmetro; as únicas partes montadas em C# são literais fixos.
->
-> A leitura de `amount` passa por `Money.Create`, e não por um construtor cru:
-> um valor que viole RN-001 no banco falha ao ser carregado em vez de circular
-> como se fosse válido.
->
-> Os testes de integração aplicam `Migrate`, e não `EnsureCreated`: o esquema sob
-> teste passa a ser o mesmo que vai para o banco real, e uma migration divergente
-> do modelo reprova aqui em vez de no deploy.
->
-> Cada teste desta etapa foi validado introduzindo a violação correspondente e
-> observando-o reprovar — mesma prática da etapa 5. Remover o desempate por `id`
-> do cursor derruba o teste de `occurred_at` idêntico; trocar a coluna para
-> `numeric(18,1)` derruba os cinco testes de precisão; comitar o lançamento em
-> unidade de trabalho própria derruba o teste de rollback do outbox.
->
-> Duas decisões locais, que por
-> [`decisions/README.md`](./decisions/README.md) não viram ADR: um
-> `IDesignTimeDbContextFactory` permite gerar migrations sem subir a API — cuja
-> composição só existe na etapa 11 —, e as migrations ficam marcadas como código
-> gerado no `.editorconfig`, para não escolher entre reescrever a saída da
-> ferramenta a cada migration e afrouxar o estilo do restante do projeto.
-
 ### Consolidation
 
 - [ ] `ConsolidationDbContext`
@@ -619,12 +588,15 @@ Legenda: `[x]` concluída · `[~]` em andamento · `[ ]` pendente
 - [ ] Verificação em `processed_events` antes de aplicar
 - [ ] Aplicação do evento e gravação do `event_id` na mesma transação (ADR-007)
 - [ ] Upsert atômico do saldo diário
-- [ ] **Especificar** o mecanismo de retry antes de implementá-lo
-- [ ] Avaliar fila de retry com TTL + dead-letter exchange
-- [ ] Avaliar contagem de tentativas via header `x-death`
-- [ ] Avaliar retry in-process com espera limitada
+- [ ] Retry in-process com espera limitada, e `nack(requeue=false)` para a DLQ ao
+      esgotar as tentativas
 - [ ] Registrar a escolha e o motivo em [ADR-003](./decisions/ADR-003-messaging.md)
-- [ ] Definir limite de tentativas antes da DLQ
+
+> Entre os três mecanismos que a ADR-003 deixou em aberto, vale o mais simples:
+> ele não exige topologia extra e prova as três coisas que precisam ser provadas —
+> mensagem não some, mensagem repetida não duplica saldo, mensagem problemática
+> não trava a fila. Fila de retry com TTL e leitura de `x-death` resolveriam o
+> mesmo com mais peças.
 - [ ] Integração: mesmo evento N vezes altera o saldo uma única vez (RNF-008)
 - [ ] Integração: mensagem inválida chega à DLQ em tempo finito
 - [ ] Integração: ausência de laço quente entre falha e reentrega
@@ -662,7 +634,7 @@ Legenda: `[x]` concluída · `[~]` em andamento · `[ ]` pendente
 
 ## Etapa 12 — Resiliência e observabilidade
 
-- [ ] Serilog com saída estruturada em JSON (ADR-011)
+- [ ] `ILogger` com saída estruturada em JSON (`AddJsonConsole`)
 - [ ] `correlationId` gerado ou propagado na entrada da API
 - [ ] `correlationId` propagado até o outbox
 - [ ] `correlationId` propagado no envelope do evento
@@ -678,14 +650,21 @@ Legenda: `[x]` concluída · `[~]` em andamento · `[ ]` pendente
 ## Etapa 13 — Testes de carga
 
 - [ ] Criar o diretório `k6/`
-- [ ] Cenário: 50 req/s em `POST /transactions`
-- [ ] Cenário: 50 eventos/s de ingestão
-- [ ] Cenário: 50 req/s em `GET /daily-balances/{date}`
+- [ ] Cenário obrigatório: 50 req/s em `GET /daily-balances/{date}`
 - [ ] Definir os thresholds no script (ADR-010)
 - [ ] Executar e coletar os resultados
-- [ ] Verificar perda de eventos igual a zero
-- [ ] Registrar os resultados no README
-- [ ] Registrar as limitações do ambiente de medição
+- [ ] Registrar os resultados e as limitações do ambiente no README
+- [ ] Registrar no README a interpretação adotada da ambiguidade do enunciado
+
+Extras, apenas se sobrar tempo:
+
+- [ ] Cenário: 50 req/s em `POST /transactions`
+- [ ] Cenário: 50 eventos/s de ingestão, com perda igual a zero
+
+> "50 chamadas por segundo" é ambíguo no enunciado. Em vez de cobrir as três
+> leituras possíveis, provamos bem a principal — a consolidação sob carga — e
+> registramos a ambiguidade. A convergência ponta a ponta é provada por teste
+> funcional na etapa 11, que não precisa de carga para ser convincente.
 
 ## Etapa 14 — README final e revisão
 

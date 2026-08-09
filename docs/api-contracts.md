@@ -140,31 +140,17 @@ X-Correlation-Id: b1f2c3d4-5e6f-4a7b-8c9d-0e1f2a3b4c5d
 | `occurredAt` | string | não | Instante ISO 8601 com offset. Ausente → instante do servidor em UTC (P-08) |
 | `description` | string | não | Até **200** caracteres. `null` e `""` são equivalentes a ausente |
 
-#### Janela de aceitação de `occurredAt`
+#### `occurredAt`
 
-Lançamento retroativo é permitido (premissa P-06) — a consolidação do dia afetado
-é atualizada normalmente, porque o worker usa `data.occurredAt` para escolher o dia
-(RN-004). O que o contrato limita é **quão longe** ele pode estar:
+Qualquer instante ISO 8601 válido é aceito e normalizado para UTC. Lançamento
+retroativo é permitido (premissa P-06) — a consolidação do dia afetado é
+atualizada normalmente, porque o worker usa `data.occurredAt` para escolher o dia
+(RN-004).
 
-```
-        rejeitado          aceito           rejeitado
-    ◄─────────────┤═══════════════════════├─────────────►
-                  │                       │
-       now − BackdatingLimit          now + ClockSkewTolerance
-            (padrão: 365 dias)          (padrão: 5 minutos)
-```
-
-| Constante | Padrão | Papel |
-|-----------|--------|-------|
-| `Transactions:BackdatingLimit` | `365.00:00:00` | Teto de retroatividade |
-| `Transactions:ClockSkewTolerance` | `00:05:00` | Absorve dessincronia de relógio do cliente |
-
-Ambas são configuração, não constante de código: o valor correto é operacional e
-muda sem mudar regra de negócio. A tolerância para o futuro **não** existe para
-permitir lançamento futuro — ela existe para que um cliente com relógio 30s
-adiantado não receba `400`. Lançamento genuinamente agendado está fora do escopo.
-
-Fora da janela → `400` com `errors.occurredAt` (§4).
+Não há teto de retroatividade nem janela de datação futura. O enunciado não
+restringe *quando* um lançamento pode ter ocorrido, e inventar um limite
+arbitrário rejeitaria lançamento legítimo em nome de um problema que ninguém
+levantou.
 
 #### Response — `201 Created`
 
@@ -485,7 +471,7 @@ ciclo de tentativa e erro por campo.
   "errors": {
     "amount": ["Amount must be greater than zero."],
     "type": ["Type must be either CREDIT or DEBIT."],
-    "occurredAt": ["OccurredAt must not be older than 365 days."]
+    "occurredAt": ["OccurredAt must be a valid ISO 8601 instant."]
   }
 }
 ```
@@ -715,13 +701,13 @@ Continuação da numeração de [`requirements.md`](./requirements.md) §6.
 | # | Ambiguidade | Premissa adotada |
 |---|-------------|------------------|
 | P-08 | `occurredAt` é obrigatório no request? | Não. Ausente → instante do servidor em UTC |
-| P-09 | Existe limite para retroatividade e para datação futura? | Sim: janela `[now − BackdatingLimit, now + ClockSkewTolerance]`, ambos configuráveis (padrões: 365 dias e 5 minutos) |
+| ~~P-09~~ | ~~Existe limite para retroatividade e para datação futura?~~ | **Descartada.** Qualquer instante válido é aceito |
 | P-10 | Qual o tamanho máximo de `description`? | 200 caracteres |
 
-P-09 é a única premissa desta etapa que **restringe** um comportamento antes
-irrestrito (P-06 permitia retroatividade sem teto). Não é regra de negócio nova:
-é limite de contrato, configurável, que existe para impedir data digitada errada —
-`2016` no lugar de `2026` — de virar um saldo em um dia arbitrário do passado.
+P-09 era a única premissa desta etapa que **restringia** um comportamento antes
+irrestrito, e foi removida antes de virar código: o enunciado não limita quando um
+lançamento pode ter ocorrido, e o teto de 365 dias era regra de negócio inventada
+por nós. O número não é reaproveitado.
 
 ---
 

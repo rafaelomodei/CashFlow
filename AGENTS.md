@@ -48,6 +48,10 @@ docs/                        contexto — requisitos, arquitetura, decisões
   [`docs/decisions/README.md`](./docs/decisions/README.md).
 - Escopo restrito ao definido em [`docs/scope.md`](./docs/scope.md) — sem scope
   creep, sem abstração especulativa.
+- **Regra de contenção:** nenhuma abstração, ADR, pattern, endpoint, componente,
+  configuração ou dependência entra sem resolver um problema que **já existe**.
+  Problema previsto para o futuro não conta; problema que o desafio não levanta
+  não conta. Na dúvida entre a peça a mais e a peça a menos, fica a menos.
 - Não iniciar código de produção de uma etapa antes de a documentação
   correspondente estar aprovada.
 

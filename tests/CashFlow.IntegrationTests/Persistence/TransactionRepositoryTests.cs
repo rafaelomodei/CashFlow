@@ -56,7 +56,7 @@ public class TransactionRepositoryTests : IAsyncLifetime
     {
         await using var context = _fixture.CreateContext();
 
-        var found = await new TransactionRepository(context).GetByIdAsync(Guid.CreateVersion7(), CancellationToken.None);
+        var found = await new TransactionRepository(context).GetByIdAsync(Guid.NewGuid(), CancellationToken.None);
 
         found.Should().BeNull();
     }

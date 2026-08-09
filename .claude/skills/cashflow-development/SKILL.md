@@ -71,8 +71,11 @@ não inventar requisito para resolver ambiguidade.
     somente isso.
 17. Atualizar a documentação **apenas** quando comportamento, contrato ou
     arquitetura mudarem. Documentação atualizada por hábito vira ruído.
-18. Se a implementação contrariou uma ADR, abrir ADR nova registrando a mudança.
-    Nunca editar a ADR antiga silenciosamente.
+18. Se a implementação contrariou uma ADR, registrar a mudança: ADR nova quando a
+    escolha central deixa de valer, seção `Revisão` datada no próprio documento
+    quando muda só o escopo, a ferramenta ou um detalhe — critério em
+    [`docs/decisions/README.md`](../../../docs/decisions/README.md). Nunca editar
+    a ADR antiga silenciosamente.
 
 ## 4. Pull Request
 

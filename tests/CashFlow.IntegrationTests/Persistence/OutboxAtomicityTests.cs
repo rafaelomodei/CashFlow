@@ -41,7 +41,7 @@ public class OutboxAtomicityTests : IAsyncLifetime
                     Type: "DEBIT",
                     OccurredAt: new DateTimeOffset(2026, 6, 1, 15, 0, 0, TimeSpan.Zero),
                     Description: "Compra de insumos",
-                    CorrelationId: Guid.CreateVersion7()),
+                    CorrelationId: Guid.NewGuid()),
                 CancellationToken.None);
         }
 
@@ -70,7 +70,7 @@ public class OutboxAtomicityTests : IAsyncLifetime
     [Fact]
     public async Task FailureToWriteTheOutbox_ShouldRollBackTheTransaction()
     {
-        var duplicatedEventId = Guid.CreateVersion7();
+        var duplicatedEventId = Guid.NewGuid();
         await PersistOutboxMessage(duplicatedEventId);
 
         await using var writeContext = _fixture.CreateContext();
