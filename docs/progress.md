@@ -539,20 +539,56 @@ Legenda: `[x]` concluída · `[~]` em andamento · `[ ]` pendente
 
 ## Etapa 8 — Infraestrutura de lançamentos
 
-- [ ] `CashFlowDbContext`
-- [ ] Mapeamento de `transactions`
-- [ ] Mapeamento de `outbox_messages`
-- [ ] Migration inicial do `cashflow_db`
-- [ ] `TransactionRepository`
-- [ ] `OutboxRepository`
-- [ ] Unidade de trabalho garantindo atomicidade
-- [ ] Configurar Testcontainers (ADR-008)
-- [ ] Integração: persistência e leitura de lançamento
-- [ ] Integração: precisão de `numeric(18,2)` (ADR-013)
-- [ ] Índice `(occurred_at DESC, id DESC)` para a paginação por cursor (ADR-014)
-- [ ] Integração: paginação por cursor e filtro por período
-- [ ] Integração: inserção concorrente não duplica registro entre páginas (ADR-014)
-- [ ] Integração: gravação atômica lançamento + outbox
+### Cash Flow
+
+- [x] `CashFlowDbContext`
+- [x] Mapeamento de `transactions`
+- [x] Mapeamento de `outbox_messages`
+- [x] Migration inicial do `cashflow_db`
+- [x] `TransactionRepository`
+- [x] `OutboxRepository`
+- [x] Unidade de trabalho garantindo atomicidade
+- [x] Configurar Testcontainers (ADR-008)
+- [x] Integração: persistência e leitura de lançamento
+- [x] Integração: precisão de `numeric(18,2)` (ADR-013)
+- [x] Índice `(occurred_at DESC, id DESC)` para a paginação por cursor (ADR-014)
+- [x] Integração: paginação por cursor e filtro por período
+- [x] Integração: inserção concorrente não duplica registro entre páginas (ADR-014)
+- [x] Integração: gravação atômica lançamento + outbox
+
+> A listagem é a única consulta em SQL literal. A comparação de tupla
+> `(occurred_at, id) < (@o, @i)` que a [ADR-014](./decisions/ADR-014-cursor-pagination.md)
+> escolheu não é traduzida a partir de LINQ, e reescrevê-la como
+> `a < @a OR (a = @a AND b < @b)` devolveria o mesmo resultado por um caminho que
+> o planejador nem sempre resolve pelo índice — que é a razão de o índice
+> existir. Com 50 000 linhas, o `EXPLAIN` da consulta traz
+> `Index Scan using ix_transactions_occurred_at_id` com
+> `Index Cond: ROW(occurred_at, id) < ROW(...)`: seek, e não varredura. Todo
+> valor viaja como parâmetro; as únicas partes montadas em C# são literais fixos.
+>
+> A leitura de `amount` passa por `Money.Create`, e não por um construtor cru:
+> um valor que viole RN-001 no banco falha ao ser carregado em vez de circular
+> como se fosse válido.
+>
+> Os testes de integração aplicam `Migrate`, e não `EnsureCreated`: o esquema sob
+> teste passa a ser o mesmo que vai para o banco real, e uma migration divergente
+> do modelo reprova aqui em vez de no deploy.
+>
+> Cada teste desta etapa foi validado introduzindo a violação correspondente e
+> observando-o reprovar — mesma prática da etapa 5. Remover o desempate por `id`
+> do cursor derruba o teste de `occurred_at` idêntico; trocar a coluna para
+> `numeric(18,1)` derruba os cinco testes de precisão; comitar o lançamento em
+> unidade de trabalho própria derruba o teste de rollback do outbox.
+>
+> Duas decisões locais, que por
+> [`decisions/README.md`](./decisions/README.md) não viram ADR: um
+> `IDesignTimeDbContextFactory` permite gerar migrations sem subir a API — cuja
+> composição só existe na etapa 11 —, e as migrations ficam marcadas como código
+> gerado no `.editorconfig`, para não escolher entre reescrever a saída da
+> ferramenta a cada migration e afrouxar o estilo do restante do projeto.
+
+### Consolidation
+
 - [ ] `ConsolidationDbContext`
 - [ ] Mapeamento de `daily_balances`
 - [ ] Mapeamento de `processed_events`
