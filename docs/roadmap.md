@@ -19,7 +19,7 @@
 [✓] Etapa 6  Domínio (TDD)
 [✓] Etapa 7  Casos de uso (TDD)
 [✓] Etapa 8  Infraestrutura de lançamentos
-[ ] Etapa 9  Mensageria e outbox
+[✓] Etapa 9  Mensageria e outbox
 [ ] Etapa 10 Consolidação e idempotência
 [ ] Etapa 11 APIs HTTP
 [ ] Etapa 12 Resiliência e observabilidade
@@ -121,7 +121,7 @@ verde em um Pull Request de teste.
 
 **Critério:** persistência real validada, incluindo precisão de `numeric(18,2)`.
 
-## Etapa 9 — Mensageria e outbox
+## Etapa 9 — Mensageria e outbox ✓
 
 - Tabela e repositório de outbox
 - Gravação atômica lançamento + evento

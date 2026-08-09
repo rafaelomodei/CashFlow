@@ -58,11 +58,11 @@ public class PublishPendingOutboxMessagesUseCaseTests
         var message = PendingMessage();
         OutboxHas(message);
 
-        var published = await _useCase.Handle(batchSize: 10, CancellationToken.None);
+        var result = await _useCase.Handle(batchSize: 10, CancellationToken.None);
 
         message.ProcessedAt.Should().NotBeNull();
         message.Error.Should().BeNull();
-        published.Should().Be(1);
+        result.Published.Should().Be(1);
         await _unitOfWork.Received(1).SaveChangesAsync(Arg.Any<CancellationToken>());
     }
 
@@ -74,10 +74,10 @@ public class PublishPendingOutboxMessagesUseCaseTests
         _publisher.PublishAsync(message, Arg.Any<CancellationToken>())
             .ThrowsAsync(new InvalidOperationException("broker unreachable"));
 
-        var published = await _useCase.Handle(batchSize: 10, CancellationToken.None);
+        var result = await _useCase.Handle(batchSize: 10, CancellationToken.None);
 
         message.ProcessedAt.Should().BeNull("evento não publicado não pode ser dado como publicado");
-        published.Should().Be(0);
+        result.Published.Should().Be(0);
     }
 
     [Fact]
@@ -104,12 +104,30 @@ public class PublishPendingOutboxMessagesUseCaseTests
         _publisher.PublishAsync(failing, Arg.Any<CancellationToken>())
             .ThrowsAsync(new InvalidOperationException("broker unreachable"));
 
-        var published = await _useCase.Handle(batchSize: 10, CancellationToken.None);
+        var result = await _useCase.Handle(batchSize: 10, CancellationToken.None);
 
         await _publisher.Received(1).PublishAsync(healthy, Arg.Any<CancellationToken>());
         healthy.ProcessedAt.Should().NotBeNull();
         failing.ProcessedAt.Should().BeNull();
-        published.Should().Be(1);
+        result.Published.Should().Be(1);
+    }
+
+    [Fact]
+    public async Task Handle_ShouldReportHowManyFailed_SoTheCycleCanBeLogged()
+    {
+        var failing = PendingMessage();
+        var healthy = PendingMessage();
+        OutboxHas(failing, healthy);
+        _publisher.PublishAsync(failing, Arg.Any<CancellationToken>())
+            .ThrowsAsync(new InvalidOperationException("broker unreachable"));
+
+        var result = await _useCase.Handle(batchSize: 10, CancellationToken.None);
+
+        // Sem a contagem de falhas, um ciclo que não publicou nada seria
+        // indistinguível de um ciclo sem nada a publicar — e é a diferença entre
+        // o sistema estar ocioso e estar quebrado.
+        result.Published.Should().Be(1);
+        result.Failed.Should().Be(1);
     }
 
     [Fact]
@@ -117,9 +135,9 @@ public class PublishPendingOutboxMessagesUseCaseTests
     {
         OutboxHas();
 
-        var published = await _useCase.Handle(batchSize: 10, CancellationToken.None);
+        var result = await _useCase.Handle(batchSize: 10, CancellationToken.None);
 
-        published.Should().Be(0);
+        result.Published.Should().Be(0);
         await _publisher.DidNotReceive().PublishAsync(Arg.Any<OutboxMessage>(), Arg.Any<CancellationToken>());
         await _unitOfWork.DidNotReceive().SaveChangesAsync(Arg.Any<CancellationToken>());
     }

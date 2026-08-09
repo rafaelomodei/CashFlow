@@ -7,7 +7,7 @@
 > Regra de uso: **este arquivo é atualizado no mesmo Pull Request que entrega o
 > item**. Checkbox marcado sem entrega correspondente é ruído, não progresso.
 
-**Etapa atual: 9 — Mensageria e outbox**
+**Etapa atual: 10 — Consolidação e idempotência**
 
 ## Progresso macro
 
@@ -20,7 +20,7 @@
 [x] Etapa 6  Domínio (TDD)
 [x] Etapa 7  Casos de uso (TDD)
 [x] Etapa 8  Infraestrutura de lançamentos
-[ ] Etapa 9  Mensageria e outbox
+[x] Etapa 9  Mensageria e outbox
 [ ] Etapa 10 Consolidação e idempotência
 [ ] Etapa 11 APIs HTTP
 [ ] Etapa 12 Resiliência e observabilidade
@@ -570,21 +570,31 @@ Legenda: `[x]` concluída · `[~]` em andamento · `[ ]` pendente
 - [x] Definir a estratégia de aplicação das migrations
 - [x] CI verde com testes de integração
 
-## Etapa 9 — Mensageria e outbox
+## Etapa 9 — Mensageria e outbox ✅
 
-- [ ] Definir a topologia RabbitMQ: exchange, fila e DLQ (ADR-003)
-- [ ] Declarar a topologia na inicialização
-- [ ] Serialização do envelope conforme `docs/api-contracts.md`
-- [ ] `RabbitMqEventPublisher` com publisher confirms
-- [ ] `OutboxPublisherService` como background service
-- [ ] Intervalo de varredura configurável
-- [ ] Retry com backoff na publicação
-- [ ] Registro de tentativas e do último erro
-- [ ] Integração: evento publicado após o registro do lançamento
-- [ ] Integração: broker fora do ar → `POST` retorna `201` (RNF-001)
-- [ ] Integração: mensagens pendentes são publicadas quando o broker retorna (RNF-007)
-- [ ] Log estruturado do ciclo de publicação
-- [ ] Registrar `SELECT ... FOR UPDATE SKIP LOCKED` como melhoria posterior, não pré-requisito (ADR-004)
+- [x] Definir a topologia RabbitMQ: exchange, fila e DLQ (ADR-003)
+- [x] Declarar a topologia na conexão
+- [x] Serialização do envelope conforme `docs/api-contracts.md`
+- [x] `RabbitMqEventPublisher` com publisher confirms
+- [x] `OutboxPublisherService` como background service
+- [x] Intervalo de varredura configurável
+- [x] Retry com backoff na publicação
+- [x] Registro de tentativas e do último erro
+- [x] Integração: evento publicado após o registro do lançamento
+- [x] Integração: broker fora do ar → lançamento é registrado e o evento fica pendente (RNF-001)
+- [x] Integração: mensagens pendentes são publicadas quando o broker retorna (RNF-007)
+- [x] Log estruturado do ciclo de publicação
+- [x] Registrar `SELECT ... FOR UPDATE SKIP LOCKED` como melhoria posterior, não pré-requisito (ADR-004)
+
+> A topologia é declarada **a cada conexão**, não uma vez na inicialização. É
+> idempotente no RabbitMQ, e um broker que voltou sem volume persistido precisa
+> dela de novo — declarar de menos custa evento perdido, declarar de novo não
+> custa nada. Pelo mesmo motivo a conexão é aberta na primeira publicação, e não
+> no startup: tornar o broker pré-condição para subir contradiria RNF-001.
+>
+> `POST /transactions` não existe até a etapa 11, então RNF-001 é verificada onde
+> ela já é verificável: o lançamento é gravado com o broker fora do ar e o evento
+> fica pendente, com tentativa e erro registrados.
 
 ## Etapa 10 — Consolidação e idempotência
 
