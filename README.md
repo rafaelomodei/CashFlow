@@ -290,6 +290,8 @@ Itens conscientemente fora do MVP ([`docs/scope.md`](./docs/scope.md)):
 - **Rotina de reprocessamento da DLQ** sem intervenção manual
 - **Saldo acumulado** e consulta por período
 - **Multi-tenant**, para atender múltiplos lojistas
+- **`SELECT ... FOR UPDATE SKIP LOCKED`** no outbox, para múltiplas instâncias do
+  publisher — otimização de vazão, não condição de correção ([ADR-004](./docs/decisions/ADR-004-transactional-outbox.md))
 - **Migrations como passo de deploy**, em vez de no startup da aplicação
 - **CD e análise estática** no pipeline — a CI de build e testes entra já na
   etapa 5
