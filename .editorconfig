@@ -74,6 +74,12 @@ dotnet_naming_symbols.private_field_symbol.applicable_accessibilities = private
 dotnet_naming_style.underscore_camel_case_style.required_prefix = _
 dotnet_naming_style.underscore_camel_case_style.capitalization = camel_case
 
+# Migrations são saída de `dotnet ef migrations add`. Marcá-las como código
+# gerado evita a escolha entre reescrever a ferramenta a cada migration e
+# afrouxar o estilo do restante do projeto.
+[**/Persistence/Migrations/*.cs]
+generated_code = true
+
 [*.{csproj,props,targets}]
 indent_size = 2
 
