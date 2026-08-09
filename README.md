@@ -20,7 +20,7 @@ e relatório de saldo diário consolidado.
 ✅ Carga               50 req/s medidos, perda zero (etapa 13)
 ```
 
-256 testes automatizados verdes, incluindo o fluxo completo
+257 testes automatizados verdes, incluindo o fluxo completo
 `POST /transactions` → RabbitMQ → worker → `GET /daily-balances/{date}`. As seções marcadas com ⏳ são
 preenchidas conforme as etapas avançam.
 
@@ -247,7 +247,7 @@ Estado atual da suíte:
 |-----------|--------|-------------|
 | Unitários | 143 | Domínio (RN-001 a RN-004) e casos de uso com dublês |
 | Arquitetura | 20 | Fronteiras entre camadas e entre os dois contextos |
-| Integração | 91 | Banco, broker e endpoints reais, via Testcontainers |
+| Integração | 92 | Banco, broker e endpoints reais, via Testcontainers |
 | Ponta a ponta | 2 | O sistema inteiro, os dois contextos juntos |
 
 ## Performance

@@ -39,6 +39,10 @@ public sealed class OutboxMessageConfiguration : IEntityTypeConfiguration<Outbox
             .HasColumnType("timestamptz")
             .IsRequired();
 
+        builder.Property(message => message.CorrelationId)
+            .HasColumnName("correlation_id")
+            .IsRequired();
+
         builder.Property(message => message.ProcessedAt)
             .HasColumnName("processed_at")
             .HasColumnType("timestamptz");

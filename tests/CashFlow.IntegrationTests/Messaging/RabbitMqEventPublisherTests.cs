@@ -27,8 +27,7 @@ public class RabbitMqEventPublisherTests : IAsyncLifetime
     [Fact]
     public async Task PublishAsync_ShouldDeliverThePayloadUntouchedToTheQueue()
     {
-        var message = OutboxMessage.Create(
-            Guid.NewGuid(), TransactionRegisteredEvent.Type, """{"eventId":"x","data":{}}""", Emission);
+        var message = OutboxMessage.Create(Guid.NewGuid(), TransactionRegisteredEvent.Type, """{"eventId":"x","data":{}}""", Emission, Guid.NewGuid());
 
         await using var provider = _fixture.CreateConnectionProvider(_fixture.BrokerOptions());
         await new RabbitMqEventPublisher(provider).PublishAsync(message, CancellationToken.None);
@@ -46,7 +45,7 @@ public class RabbitMqEventPublisherTests : IAsyncLifetime
     public async Task PublishAsync_ShouldSetTheAmqpPropertiesTheContractDefines()
     {
         var eventId = Guid.NewGuid();
-        var message = OutboxMessage.Create(eventId, TransactionRegisteredEvent.Type, "{}", Emission);
+        var message = OutboxMessage.Create(eventId, TransactionRegisteredEvent.Type, "{}", Emission, Guid.NewGuid());
 
         await using var provider = _fixture.CreateConnectionProvider(_fixture.BrokerOptions());
         await new RabbitMqEventPublisher(provider).PublishAsync(message, CancellationToken.None);
@@ -64,9 +63,28 @@ public class RabbitMqEventPublisherTests : IAsyncLifetime
     }
 
     [Fact]
+    public async Task PublishAsync_ShouldCarryTheCorrelationIdInTheAmqpProperty()
+    {
+        var correlationId = Guid.NewGuid();
+        var message = OutboxMessage.Create(
+            Guid.NewGuid(), TransactionRegisteredEvent.Type, "{}", Emission, correlationId);
+
+        await using var provider = _fixture.CreateConnectionProvider(_fixture.BrokerOptions());
+        await new RabbitMqEventPublisher(provider).PublishAsync(message, CancellationToken.None);
+
+        // O contrato §5.4 exige a propriedade AMQP além do envelope, e é dela que
+        // o worker tira a correlação para o escopo de log. Sem ela o rastro se
+        // perde no processo mais distante da requisição original — que é
+        // justamente onde "onde parou?" é mais difícil de responder (ADR-011).
+        var properties = (await _fixture.DrainQueueAsync()).Single().BasicProperties;
+
+        properties.CorrelationId.Should().Be(correlationId.ToString());
+    }
+
+    [Fact]
     public async Task PublishAsync_ShouldRouteThroughTheContractExchangeAndRoutingKey()
     {
-        var message = OutboxMessage.Create(Guid.NewGuid(), TransactionRegisteredEvent.Type, "{}", Emission);
+        var message = OutboxMessage.Create(Guid.NewGuid(), TransactionRegisteredEvent.Type, "{}", Emission, Guid.NewGuid());
 
         await using var provider = _fixture.CreateConnectionProvider(_fixture.BrokerOptions());
         await new RabbitMqEventPublisher(provider).PublishAsync(message, CancellationToken.None);
@@ -80,7 +98,7 @@ public class RabbitMqEventPublisherTests : IAsyncLifetime
     [Fact]
     public async Task PublishAsync_ShouldThrowWhenNoQueueIsBoundToReceiveTheMessage()
     {
-        var message = OutboxMessage.Create(Guid.NewGuid(), TransactionRegisteredEvent.Type, "{}", Emission);
+        var message = OutboxMessage.Create(Guid.NewGuid(), TransactionRegisteredEvent.Type, "{}", Emission, Guid.NewGuid());
 
         await using var provider = _fixture.CreateConnectionProvider(_fixture.BrokerOptions());
         var publisher = new RabbitMqEventPublisher(provider);
@@ -100,7 +118,7 @@ public class RabbitMqEventPublisherTests : IAsyncLifetime
     [Fact]
     public async Task PublishAsync_ShouldThrowWhenTheBrokerIsUnreachable()
     {
-        var message = OutboxMessage.Create(Guid.NewGuid(), TransactionRegisteredEvent.Type, "{}", Emission);
+        var message = OutboxMessage.Create(Guid.NewGuid(), TransactionRegisteredEvent.Type, "{}", Emission, Guid.NewGuid());
 
         await using var provider = _fixture.CreateConnectionProvider(MessagingFixture.UnreachableBrokerOptions());
         var publish = async () =>

@@ -101,11 +101,10 @@ public class OutboxRepositoryTests : IAsyncLifetime
     }
 
     private static OutboxMessage Message(DateTimeOffset occurredAt) =>
-        OutboxMessage.Create(
-            Guid.NewGuid(),
+        OutboxMessage.Create(Guid.NewGuid(),
             TransactionRegisteredEvent.Type,
             """{"eventType":"TransactionRegistered"}""",
-            occurredAt);
+            occurredAt, Guid.NewGuid());
 
     private async Task Persist(params OutboxMessage[] messages)
     {

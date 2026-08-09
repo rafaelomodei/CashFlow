@@ -101,11 +101,10 @@ public class OutboxAtomicityTests : IAsyncLifetime
     }
 
     private static OutboxMessage BuildMessage(Guid eventId) =>
-        OutboxMessage.Create(
-            eventId,
+        OutboxMessage.Create(eventId,
             TransactionRegisteredEvent.Type,
             """{"eventId":"00000000-0000-0000-0000-000000000000"}""",
-            new DateTimeOffset(2026, 6, 2, 8, 0, 0, TimeSpan.Zero));
+            new DateTimeOffset(2026, 6, 2, 8, 0, 0, TimeSpan.Zero), Guid.NewGuid());
 
     private async Task PersistOutboxMessage(Guid eventId)
     {
