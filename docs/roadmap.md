@@ -18,7 +18,7 @@
 [✓] Etapa 5  Esqueleto da solução, ambiente e CI
 [✓] Etapa 6  Domínio (TDD)
 [✓] Etapa 7  Casos de uso (TDD)
-[~] Etapa 8  Infraestrutura de lançamentos
+[✓] Etapa 8  Infraestrutura de lançamentos
 [ ] Etapa 9  Mensageria e outbox
 [ ] Etapa 10 Consolidação e idempotência
 [ ] Etapa 11 APIs HTTP
@@ -113,7 +113,7 @@ verde em um Pull Request de teste.
 
 **Critério:** casos de uso testados com dublês; nenhuma dependência de infraestrutura.
 
-## Etapa 8 — Infraestrutura de lançamentos (em andamento)
+## Etapa 8 — Infraestrutura de lançamentos ✓
 
 - `DbContext`, mapeamentos, migrations
 - Repositórios sobre PostgreSQL

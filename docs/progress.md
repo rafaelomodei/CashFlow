@@ -7,7 +7,7 @@
 > Regra de uso: **este arquivo é atualizado no mesmo Pull Request que entrega o
 > item**. Checkbox marcado sem entrega correspondente é ruído, não progresso.
 
-**Etapa atual: 8 — Infraestrutura de lançamentos**
+**Etapa atual: 9 — Mensageria e outbox**
 
 ## Progresso macro
 
@@ -19,7 +19,7 @@
 [x] Etapa 5  Esqueleto da solução, ambiente e CI
 [x] Etapa 6  Domínio (TDD)
 [x] Etapa 7  Casos de uso (TDD)
-[~] Etapa 8  Infraestrutura de lançamentos
+[x] Etapa 8  Infraestrutura de lançamentos
 [ ] Etapa 9  Mensageria e outbox
 [ ] Etapa 10 Consolidação e idempotência
 [ ] Etapa 11 APIs HTTP
@@ -537,7 +537,7 @@ Legenda: `[x]` concluída · `[~]` em andamento · `[ ]` pendente
 
 ---
 
-## Etapa 8 — Infraestrutura de lançamentos
+## Etapa 8 — Infraestrutura de lançamentos ✅
 
 ### Cash Flow
 
@@ -558,12 +558,17 @@ Legenda: `[x]` concluída · `[~]` em andamento · `[ ]` pendente
 
 ### Consolidation
 
-- [ ] `ConsolidationDbContext`
-- [ ] Mapeamento de `daily_balances`
-- [ ] Mapeamento de `processed_events`
-- [ ] Migration inicial do `consolidation_db`
-- [ ] Definir a estratégia de aplicação das migrations
-- [ ] CI verde com testes de integração
+- [x] `ConsolidationDbContext`
+- [x] Mapeamento de `daily_balances`
+- [x] Mapeamento de `processed_events`
+- [x] Migration inicial do `consolidation_db`
+- [x] `DailyBalanceRepository`
+- [x] `ProcessedEventRepository`
+- [x] Unidade de trabalho garantindo atomicidade
+- [x] Integração: persistência e leitura do saldo diário
+- [x] Integração: chave primária de `processed_events` recusa evento repetido (ADR-007)
+- [x] Definir a estratégia de aplicação das migrations
+- [x] CI verde com testes de integração
 
 ## Etapa 9 — Mensageria e outbox
 
