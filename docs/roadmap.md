@@ -20,7 +20,7 @@
 [✓] Etapa 7  Casos de uso (TDD)
 [✓] Etapa 8  Infraestrutura de lançamentos
 [✓] Etapa 9  Mensageria e outbox
-[ ] Etapa 10 Consolidação e idempotência
+[✓] Etapa 10 Consolidação e idempotência
 [ ] Etapa 11 APIs HTTP
 [ ] Etapa 12 Resiliência e observabilidade
 [ ] Etapa 13 Testes de carga
@@ -138,7 +138,7 @@ otimização, não pré-requisito ([ADR-004](./decisions/ADR-004-transactional-o
 publicadas quando ele volta. Este é o primeiro ponto em que RNF-001 fica
 demonstrável.
 
-## Etapa 10 — Consolidação e idempotência
+## Etapa 10 — Consolidação e idempotência ✓
 
 - Consumidor com ack manual
 - `processed_events` e transação única

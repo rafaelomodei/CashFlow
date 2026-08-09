@@ -2,6 +2,8 @@
 
 - **Status:** Aceito
 - **Data:** 2026-08-08
+- **Complementado em:** 2026-08-09 — mecanismo de retry escolhido, como esta
+  própria ADR previa para a etapa 10
 - **Decisores:** rafaelomodei
 
 ## Contexto
@@ -70,13 +72,41 @@ O backoff precisa vir de um mecanismo explícito. Três caminhos viáveis:
 | Contagem via header `x-death` | O próprio broker registra as passagens por dead-lettering; o consumidor lê a contagem e decide entre nova espera e DLQ | Depende do formato do header |
 | Retry in-process antes do `nack` | Espera limitada dentro do consumidor (ex.: 3 tentativas curtas); esgotado, `nack(requeue=false)` direto para a DLQ | Segura a mensagem e o `prefetch` durante a espera |
 
-A escolha entre eles é feita na **etapa 10** do [roadmap](../roadmap.md), quando o
-consumidor for implementado, e o motivo é registrado aqui. O que já está decidido
-agora é o comportamento exigido:
+O comportamento exigido é:
 
 ```
 erro transitório → retry com espera → limite atingido → DLQ (em tempo finito)
 ```
+
+#### Mecanismo escolhido (etapa 10)
+
+**Retry in-process com espera limitada**, seguido de `nack(requeue=false)` para a
+DLQ. Padrão: 3 tentativas com 2 segundos entre elas.
+
+Ele foi escolhido por ser o único dos três que não acrescenta topologia. Fila de
+retry com TTL exigiria uma fila por faixa de espera e um exchange a mais; ler
+`x-death` exigiria interpretar um header cujo formato varia entre versões do
+broker. Os dois resolvem o mesmo problema que este resolve, com mais peças para
+manter e explicar.
+
+O que o consumidor precisa provar são três coisas, e nenhuma delas depende do
+mecanismo mais elaborado:
+
+| Garantia | Como |
+|----------|------|
+| Mensagem não some | `ack` manual só depois do commit no banco |
+| Mensagem repetida não duplica saldo | `processed_events` na mesma transação ([ADR-007](./ADR-007-idempotency.md)) |
+| Mensagem problemática não trava a fila | Tentativas limitadas e DLQ |
+
+O custo aceito: a mensagem ocupa uma vaga do `prefetch` durante a espera. Com 3
+tentativas de 2 segundos, uma mensagem problemática segura uma vaga por até 6
+segundos — irrelevante para a escala do desafio, e o motivo pelo qual as esperas
+são curtas e o limite é baixo.
+
+**Erro permanente não passa por retry.** Envelope ilegível, campo obrigatório
+ausente e violação de regra de domínio vão direto para a DLQ: um JSON quebrado não
+fica válido na segunda leitura, e um valor não positivo continua não positivo.
+Retentá-los só atrasaria a fila.
 
 ## Alternativas consideradas
 
