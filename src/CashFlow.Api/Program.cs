@@ -1,21 +1,40 @@
-// Composition root da Cash Flow API.
-// Endpoints, validação e middleware entram na etapa 11 do roadmap.
+using CashFlow.Api.Http;
+using CashFlow.Infrastructure;
+using Microsoft.AspNetCore.Mvc;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddControllers();
+// Saída estruturada em JSON, sem dependência externa (ADR-011).
+builder.Logging.AddJsonConsole();
+
+builder.Services
+    .AddControllers()
+    .AddJsonOptions(options => CashFlow.Api.Http.JsonOptions.Configure(options.JsonSerializerOptions));
+
+// A validação automática do MVC produz um corpo próprio; o contrato define o
+// dele (§4.2). Suprimir o filtro deixa uma única forma de erro na API.
+builder.Services.Configure<ApiBehaviorOptions>(options => options.SuppressModelStateInvalidFilter = true);
+
 builder.Services.AddOpenApi();
+builder.Services.AddCashFlowInfrastructure(builder.Configuration);
 
 var app = builder.Build();
 
-if (app.Environment.IsDevelopment())
+await app.Services.ApplyCashFlowMigrationsAsync();
+
+app.UseMiddleware<CorrelationIdMiddleware>();
+app.UseMiddleware<ExceptionHandlingMiddleware>();
+app.UseStatusCodePages(StatusCodeHandler.WriteProblemAsync);
+
+if (!app.Environment.IsProduction())
 {
     app.MapOpenApi();
+    app.UseSwaggerUI(options => options.SwaggerEndpoint("/openapi/v1.json", "Cash Flow API"));
 }
 
 app.MapControllers();
 
-app.Run();
+await app.RunAsync();
 
-// Exposto para o WebApplicationFactory dos testes de integração (etapa 11).
+// Exposto para o WebApplicationFactory dos testes de integração.
 public partial class Program;

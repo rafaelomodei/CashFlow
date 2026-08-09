@@ -44,10 +44,16 @@ public sealed class Transaction
 
     public DateTimeOffset CreatedAt { get; }
 
+    /// <param name="occurredAt">
+    /// Nulo quando o cliente não informou. Nesse caso o lançamento ocorreu no
+    /// instante em que foi registrado, e os dois campos recebem exatamente o
+    /// mesmo valor — o contrato promete essa igualdade (§2.1, premissa P-08), e
+    /// duas leituras de relógio a quebrariam por microssegundos.
+    /// </param>
     public static Transaction Create(
         Money amount,
         TransactionType type,
-        DateTimeOffset occurredAt,
+        DateTimeOffset? occurredAt,
         string? description)
     {
         ArgumentNullException.ThrowIfNull(amount);
@@ -57,20 +63,21 @@ public sealed class Transaction
             throw new InvalidTransactionTypeException();
         }
 
-        if (occurredAt == default)
+        if (occurredAt == default(DateTimeOffset))
         {
             throw new InvalidOccurrenceDateException();
         }
 
         var normalizedDescription = Normalize(description);
+        var createdAt = DateTimeOffset.UtcNow;
 
         return new Transaction(
             Guid.NewGuid(),
             amount,
             type,
-            occurredAt.ToUniversalTime(),
+            occurredAt?.ToUniversalTime() ?? createdAt,
             normalizedDescription,
-            DateTimeOffset.UtcNow);
+            createdAt);
     }
 
     private static string? Normalize(string? description)
