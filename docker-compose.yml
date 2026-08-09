@@ -135,6 +135,18 @@ services:
         condition: service_healthy
     networks: [cashflow-net]
 
+  # Perfil `load`: não sobe com `docker compose up -d`. Uma ferramenta de carga
+  # ligada junto do ambiente competiria por CPU com o que ela deveria medir.
+  k6:
+    image: grafana/k6:1.4.0
+    container_name: k6
+    profiles: [load]
+    volumes:
+      - ./k6:/scripts:ro
+    environment:
+      CONSOLIDATION_URL: http://consolidation-api:8080
+    networks: [cashflow-net]
+
 volumes:
   cashflow-db-data:
   consolidation-db-data:

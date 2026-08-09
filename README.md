@@ -7,7 +7,7 @@ e relatório de saldo diário consolidado.
 
 ## Status
 
-**Etapa atual: 13 — Testes de carga**
+**Etapa atual: 14 — README final e revisão**
 
 ```
 ✅ Requisitos          etapas 1–2
@@ -17,7 +17,7 @@ e relatório de saldo diário consolidado.
 ✅ Mensageria          outbox, publicação e consumo idempotente (etapas 9–10)
 ✅ Endpoints HTTP      as duas APIs, com OpenAPI (etapa 11)
 ✅ Resiliência         cenários de falha executados e health checks (etapa 12)
-🔨 Carga               k6 (etapa 13)
+✅ Carga               50 req/s medidos, perda zero (etapa 13)
 ```
 
 256 testes automatizados verdes, incluindo o fluxo completo
@@ -115,7 +115,7 @@ docs/                  documentação, ADRs e enunciado
 .github/workflows/     pipeline de CI
 src/                   código-fonte
 tests/                 testes automatizados
-k6/                    testes de carga (⏳ etapa 13)
+k6/                    testes de carga
 docker-compose.yml     ambiente local
 ```
 
@@ -252,19 +252,47 @@ Estado atual da suíte:
 
 ## Performance
 
-Requisito: 50 chamadas/s com perda máxima de 5%.
-Meta interna: erro HTTP < 1%.
+Requisito do enunciado: 50 chamadas/s com perda máxima de 5%.
 
-"Chamadas" é ambíguo no enunciado — pode ser leitura do saldo ou ingestão de
-eventos. A interpretação principal adotada é a **leitura da consolidação sob
-carga**, medida com k6. A convergência ponta a ponta (lançamento → RabbitMQ →
-worker → saldo) é provada por teste funcional, que não precisa de carga para ser
-convincente. Carga de escrita e de ingestão são extras, executados se sobrar
-tempo.
+### A ambiguidade, e a interpretação adotada
 
-Critérios: [ADR-010](./docs/decisions/ADR-010-performance-validation.md).
+O enunciado diz que *"o sistema de consolidação chega a processar 50 chamadas por
+segundo"*. "Chamadas" pode significar leitura do saldo consolidado ou eventos de
+lançamento a serem consolidados. Em vez de cobrir as duas leituras com medições
+rasas, adotamos a **leitura do saldo** como interpretação principal — é sobre o
+sistema de consolidação que a frase fala — e medimos a outra como extra.
 
-⏳ *Resultados medidos serão publicados aqui na etapa 13.*
+### Resultados medidos
+
+| Cenário | Carga | Erro | p95 | Resultado |
+|---------|-------|------|-----|-----------|
+| **Leitura do saldo** (obrigatório) | 1 500 req em 50,0 req/s por 30s | 0,00% | 2,27 ms | ✅ |
+| Escrita de lançamentos (extra) | 1 501 req em 50,0 req/s por 30s | 0,00% | 4,42 ms | ✅ |
+
+**Perda de eventos: zero.** Os 1 501 lançamentos registrados sob carga apareceram
+inteiros no saldo consolidado (`1501.00`), com o outbox e a DLQ vazios ao final.
+Isso não é medido por threshold de k6 — é conferido comparando o total registrado
+com o saldo após a convergência.
+
+Thresholds declarados no próprio script, de modo que o teste falhe sozinho quando
+o requisito não for atendido: erro < 1%, p95 < 100 ms na leitura, checks > 99%.
+Os 5% do enunciado são o teto tolerado, não a meta.
+
+### Condições da medição
+
+| Item | Valor |
+|------|-------|
+| CPU | Intel Core i7-7700HQ @ 2.80 GHz, 8 núcleos |
+| Memória | 15 GiB |
+| Ambiente | Docker Compose, tudo na mesma máquina |
+
+Os números são relativos a este ambiente: banco, broker, aplicação e o próprio k6
+competem pela mesma CPU. A afirmação que o projeto sustenta não é "este sistema
+suporta 50 req/s em qualquer infraestrutura", e sim "o requisito foi medido, nestas
+condições, com este resultado".
+
+Como reproduzir: [`k6/README.md`](./k6/README.md). Critérios:
+[ADR-010](./docs/decisions/ADR-010-performance-validation.md).
 
 ## Observabilidade
 

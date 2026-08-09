@@ -7,7 +7,7 @@
 > Regra de uso: **este arquivo é atualizado no mesmo Pull Request que entrega o
 > item**. Checkbox marcado sem entrega correspondente é ruído, não progresso.
 
-**Etapa atual: 13 — Testes de carga**
+**Etapa atual: 14 — README final e revisão**
 
 ## Progresso macro
 
@@ -24,7 +24,7 @@
 [x] Etapa 10 Consolidação e idempotência
 [x] Etapa 11 APIs HTTP
 [x] Etapa 12 Resiliência e observabilidade
-[ ] Etapa 13 Testes de carga
+[x] Etapa 13 Testes de carga
 [ ] Etapa 14 README final e revisão
 ```
 
@@ -716,24 +716,29 @@ Legenda: `[x]` concluída · `[~]` em andamento · `[ ]` pendente
 > não tinha como perguntar nada ao processo. Os Dockerfiles das APIs passaram a
 > instalar `curl`.
 
-## Etapa 13 — Testes de carga
+## Etapa 13 — Testes de carga ✅
 
-- [ ] Criar o diretório `k6/`
-- [ ] Cenário obrigatório: 50 req/s em `GET /daily-balances/{date}`
-- [ ] Definir os thresholds no script (ADR-010)
-- [ ] Executar e coletar os resultados
-- [ ] Registrar os resultados e as limitações do ambiente no README
-- [ ] Registrar no README a interpretação adotada da ambiguidade do enunciado
+- [x] Criar o diretório `k6/`
+- [x] Cenário obrigatório: 50 req/s em `GET /daily-balances/{date}`
+- [x] Definir os thresholds no script (ADR-010)
+- [x] Executar e coletar os resultados
+- [x] Registrar os resultados e as limitações do ambiente no README
+- [x] Registrar no README a interpretação adotada da ambiguidade do enunciado
 
 Extras, apenas se sobrar tempo:
 
-- [ ] Cenário: 50 req/s em `POST /transactions`
+- [x] Cenário: 50 req/s em `POST /transactions`
 - [ ] Cenário: 50 eventos/s de ingestão, com perda igual a zero
 
-> "50 chamadas por segundo" é ambíguo no enunciado. Em vez de cobrir as três
-> leituras possíveis, provamos bem a principal — a consolidação sob carga — e
-> registramos a ambiguidade. A convergência ponta a ponta é provada por teste
-> funcional na etapa 11, que não precisa de carga para ser convincente.
+> O extra de ingestão não virou cenário k6 próprio porque não precisou: a carga de
+> escrita já produz 50 eventos/s no outbox, e a verificação de perda zero é
+> comparar o total registrado com o saldo após a convergência. 1 501 lançamentos
+> entraram, `1501.00` saiu, com outbox e DLQ vazios. Um terceiro script mediria a
+> mesma coisa por um caminho mais longo.
+>
+> A taxa é fixa (`constant-arrival-rate`), e não um número fixo de VUs. Com VUs
+> fixos a taxa cairia sozinha se o servidor ficasse mais lento, e o teste passaria
+> justamente quando o sistema piorasse.
 
 ## Etapa 14 — README final e revisão
 
