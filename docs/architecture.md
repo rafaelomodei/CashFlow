@@ -86,6 +86,7 @@ de RNF-001.
 ## 4. Fluxo principal — registro de lançamento
 
 ```mermaid
+%%{init: {"themeCSS": "#sequencenumber { fill: #dbeafe; stroke: #2563eb; } .sequenceNumber { fill: #111827; font-weight: 700; }"}}%%
 sequenceDiagram
     autonumber
     participant C as Cliente
