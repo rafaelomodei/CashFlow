@@ -11,7 +11,7 @@ namespace CashFlow.IntegrationTests.Persistence;
 /// ADR-014).
 ///
 /// Os testes passam pelo caso de uso, e não direto pelo repositório: é a
-/// composição que vai para produção — cursor codificado, <c>limit + 1</c> e
+/// composição real da aplicação — cursor codificado, <c>limit + 1</c> e
 /// comparação de tupla no SQL —, e é nela que um erro de tradução aparece.
 /// </summary>
 [Collection(nameof(CashFlowDatabaseCollection))]

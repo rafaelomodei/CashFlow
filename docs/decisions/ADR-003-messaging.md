@@ -108,6 +108,21 @@ ausente e violação de regra de domínio vão direto para a DLQ: um JSON quebra
 fica válido na segunda leitura, e um valor não positivo continua não positivo.
 Retentá-los só atrasaria a fila.
 
+#### Revisão (2026-08-10 — cenários de falha da etapa 12)
+
+O destino ao esgotar as tentativas deixou de ser incondicionalmente a DLQ. O
+cenário com o `consolidation_db` fora do ar por mais tempo que a janela de retry
+mostrou o problema: eventos perfeitamente válidos iam para a DLQ e a recuperação
+deixava de ser automática. A DLQ é para mensagem problemática, não para
+infraestrutura indisponível.
+
+O consumidor passou a distinguir os dois casos por `DbException.IsTransient`:
+esgotadas as tentativas, falha de conectividade devolve a mensagem à fila
+(`requeue=true`) para esperar o banco voltar; qualquer outra falha segue para a
+DLQ. O laço quente que este documento registra acima não se reintroduz — o
+requeue só acontece depois das tentativas com espera real, e a reentrega seguinte
+repete o ciclo completo de retry.
+
 ## Alternativas consideradas
 
 | Alternativa | Prós | Contras | Veredito |

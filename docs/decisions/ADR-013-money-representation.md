@@ -53,7 +53,7 @@ eventos já publicados.
 
 ### Arredondamento
 
-Nenhum cálculo do MVP produz fração indivisível — o saldo é soma e subtração de
+Nenhum cálculo da solução produz fração indivisível — o saldo é soma e subtração de
 valores já com 2 casas, e não há juros, rateio ou percentual. Nenhuma política de
 arredondamento é exercitada no escopo atual, e por isso nenhuma é declarada: a
 única operação de escala que existe em `Money` é a normalização descrita abaixo.
@@ -90,7 +90,7 @@ primeira.
 `OccurredAt` é `timestamptz` em UTC. O dia da consolidação é derivado da data UTC
 de `OccurredAt` (premissa P-04). Limitação conhecida: um lançamento às 22h em
 Brasília (UTC−3) cai no dia seguinte em UTC. Conversão para o fuso do lojista está
-registrada como melhoria futura — no MVP, a regra fica explícita em vez de
+registrada como melhoria futura — neste escopo, a regra fica explícita em vez de
 implícita e incorreta.
 
 ## Alternativas consideradas
@@ -129,7 +129,7 @@ estados inválidos irrepresentáveis. Em domínio financeiro, um valor negativo 
 sinal invertido não falha ruidosamente: ele produz um saldo errado que parece
 correto. Encapsular é a defesa mais barata contra isso.
 
-Aceitamos também a limitação de fuso horário do MVP, documentada de forma explícita.
+Aceitamos também a limitação de fuso horário da solução, documentada de forma explícita.
 
 ## Requisitos atendidos
 

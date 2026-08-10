@@ -42,7 +42,7 @@ segurança — a validação relevante é a dos campos que existem.
 
 ### 1.2 Versionamento das APIs
 
-As rotas do MVP são **não versionadas** (`/transactions`, `/daily-balances/{date}`).
+As rotas são **não versionadas** (`/transactions`, `/daily-balances/{date}`).
 Uma mudança incompatível futura introduziria o prefixo `/v2`, mantendo as rotas
 atuais em funcionamento durante a migração. Não criamos `/v1` agora: um prefixo de
 versão que nunca teve uma segunda versão é cerimônia, não compatibilidade.
@@ -195,7 +195,7 @@ consolidação de forma síncrona — exatamente o acoplamento que
 | `415` | `Content-Type` diferente de `application/json` |
 | `500` | Falha inesperada — inclusive indisponibilidade do `cashflow_db` |
 
-Não existe `409`: lançamentos não têm chave natural e o MVP não implementa
+Não existe `409`: lançamentos não têm chave natural e a solução não implementa
 `Idempotency-Key` (registrado como melhoria futura em
 [ADR-007](./decisions/ADR-007-idempotency.md) §"Idempotência na entrada da API").
 
@@ -257,7 +257,7 @@ occurredAt DESC, id DESC
 Mais recentes primeiro — a ordem que o scroll infinito consome. `id` é
 desempate obrigatório: sem ele, lançamentos com o mesmo `occurredAt` teriam ordem
 indefinida e a paginação por cursor poderia pular ou repetir registros.
-Não há parâmetro de ordenação configurável no MVP.
+Não há parâmetro de ordenação configurável neste escopo.
 
 #### Response — `200 OK`
 
@@ -568,7 +568,7 @@ diagnóstico, mas recebe a chave que permite obtê-lo do suporte.
 
 O domínio de `type` (`https://cashflow.dev/problems/...`) é um identificador
 estável, não uma URL que precise resolver. Documentá-lo aqui é o suficiente no
-escopo do MVP.
+escopo do desafio.
 
 ---
 
@@ -599,7 +599,7 @@ projeto: ele atravessa `Shared.Contracts`, o outbox, o broker e o worker.
 |-------|------|-------|
 | `eventId` | UUID | **Chave de idempotência** ([ADR-007](./decisions/ADR-007-idempotency.md)). Gerado uma vez, na gravação do outbox |
 | `eventType` | string | Discriminador. `TransactionRegistered` |
-| `eventVersion` | inteiro | Versão do schema. `1` no MVP |
+| `eventVersion` | inteiro | Versão do schema. `1` nesta versão do contrato |
 | `occurredAt` | instante | Momento da **emissão** do evento |
 | `correlationId` | UUID | Correlação ponta a ponta ([ADR-011](./decisions/ADR-011-observability.md)) |
 | `data.transactionId` | UUID | Id do lançamento no `cashflow_db` |
@@ -629,7 +629,7 @@ São identificadores de coisas diferentes e não devem ser confundidos:
 | `data.transactionId` | O lançamento | 1 por lançamento |
 | `eventId` | A mensagem sobre o lançamento | 1 por mensagem no outbox |
 
-No MVP há exatamente um evento por lançamento, o que os torna aparentemente
+Hoje há exatamente um evento por lançamento, o que os torna aparentemente
 intercambiáveis. Usar `transactionId` como chave de idempotência funcionaria hoje
 e quebraria no primeiro evento adicional sobre o mesmo lançamento. `eventId` é a
 chave de `processed_events` ([ADR-007](./decisions/ADR-007-idempotency.md)).
@@ -751,7 +751,7 @@ por nós. O número não é reaproveitado.
 | Geração | `Microsoft.AspNetCore.OpenApi` — nativo do .NET, sem dependência externa ([ADR-012](./decisions/ADR-012-tech-stack.md)) |
 | Fonte | O **código**, a partir da etapa 11 |
 | Documento | `/openapi/v1.json`, em cada uma das duas APIs |
-| UI | Swagger UI em `/swagger`, habilitada apenas fora de produção |
+| UI | Swagger UI em `/swagger`, habilitada apenas fora do ambiente `Production` |
 | Versão | OpenAPI 3.1 |
 
 Cada API publica a **sua** especificação. Não há documento unificado: um único
@@ -774,7 +774,7 @@ etapa  11 em diante  OpenAPI é gerada do código e precisa concordar com este d
 
 ## 9. Definition of Done desta etapa
 
-- [x] Todos os endpoints do MVP possuem contrato completo
+- [x] Todos os endpoints do escopo possuem contrato completo
 - [x] Todos os status HTTP possíveis estão definidos
 - [x] O evento possui schema estável e versionado
 - [x] Ambiguidades de contrato foram eliminadas e registradas como premissas

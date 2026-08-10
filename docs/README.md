@@ -9,7 +9,7 @@ débito e relatório de saldo diário consolidado.
 | Documento | O que responde |
 |-----------|----------------|
 | [`requirements.md`](./requirements.md) | O que o sistema precisa fazer e por quê — RF, RNF, restrições, premissas e rastreabilidade |
-| [`scope.md`](./scope.md) | O que está e o que **não** está no MVP, com justificativa |
+| [`scope.md`](./scope.md) | O que está e o que **não** está no escopo, com justificativa |
 | [`architecture.md`](./architecture.md) | Como o sistema é estruturado — diagramas, fluxos, comportamento sob falha |
 | [`api-contracts.md`](./api-contracts.md) | Qual é o contrato exato — endpoints, DTOs, erros e o schema do evento |
 | [`decisions/`](./decisions/README.md) | Por que cada escolha foi feita — 15 ADRs com alternativas e trade-offs |
@@ -48,15 +48,9 @@ lançamento, e nenhum evento é perdido — apenas atrasado.
 
 ## Estado atual
 
-Fase de **documentação e desenho arquitetural**. Nenhum código de produção foi
-escrito ainda, por decisão registrada em [`roadmap.md`](./roadmap.md).
-
-| Etapa | Status |
-|-------|--------|
-| 1 — Entendimento do desafio | ✅ Concluída |
-| 2 — Mapeamento de requisitos | ✅ Concluída |
-| 3 — Decisões arquiteturais | ✅ Concluída |
-| 4 — Contratos de API e eventos | ✅ Concluída |
-| 5 a 14 — Implementação | ⬜ Pendente |
+Sistema **implementado e validado**: os dois serviços, o worker, o outbox, o
+consumo idempotente, as APIs HTTP, o frontend de demonstração, os cenários de
+falha executados e os testes de carga medidos. O que resta é a revisão final da
+etapa 14 (README e conferência da documentação contra o entregue).
 
 Acompanhamento item a item: [`progress.md`](./progress.md).

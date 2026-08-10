@@ -8,11 +8,8 @@ using Shared.Contracts;
 namespace CashFlow.Application.Transactions;
 
 /// <summary>
-/// UC-01 — registrar um lançamento (RF-001, RF-002).
-///
-/// Não há dependência de broker aqui, e isso é a implementação de RNF-001: o
-/// lançamento e o evento são gravados juntos, e a publicação acontece depois,
-/// por fora (ADR-004).
+/// UC-01 — registrar um lançamento (RF-001, RF-002). A publicação do evento é
+/// assíncrona, via outbox (ADR-004): a ausência de broker aqui é RNF-001.
 /// </summary>
 public sealed class RegisterTransactionUseCase
 {
@@ -43,9 +40,7 @@ public sealed class RegisterTransactionUseCase
         await _transactions.AddAsync(transaction, cancellationToken);
         await _outbox.AddAsync(BuildEvent(transaction, command.CorrelationId), cancellationToken);
 
-        // Um único commit: ou o lançamento e o evento existem, ou nenhum dos dois
-        // existe. É o que impede um saldo consolidado sem lançamento — e um
-        // lançamento que o mundo nunca fica sabendo (ADR-004).
+        // Lançamento e evento no mesmo commit: ou existem os dois, ou nenhum (ADR-004).
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 
         return TransactionDto.From(transaction);

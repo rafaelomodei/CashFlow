@@ -36,8 +36,8 @@ testabilidade avaliadas pelo desafio.
 | MassTransit / NServiceBus | Abstraem a mensageria e implementam outbox e retry por nós. Como a mensageria **é** o ponto avaliado do desafio, esconder o mecanismo tiraria justamente o que deve ser demonstrado |
 | Minimal APIs | Adequadas e concisas, mas controllers deixam a separação de camadas mais evidente para leitura |
 
-O caso do MassTransit é o mais relevante: é uma escolha excelente em produção
-(economiza semanas), e **má** neste contexto, porque o desafio avalia exatamente a
+O caso do MassTransit é o mais relevante: é uma escolha excelente em um sistema
+real (economiza semanas), e **má** neste contexto, porque o desafio avalia exatamente a
 compreensão de outbox, retry e idempotência. Implementar à mão aqui é decisão
 consciente sobre o objetivo do projeto, não desconhecimento da alternativa.
 
@@ -71,7 +71,7 @@ consciente sobre o objetivo do projeto, não desconhecimento da alternativa.
 
 Aceitamos **escrever mais código de infraestrutura** para manter os mecanismos
 arquiteturais explícitos e auditáveis. Esta é uma escolha de contexto: em um
-sistema de produção com prazo, usaríamos MassTransit e registraríamos a decisão
+sistema real com prazo, usaríamos MassTransit e registraríamos a decisão
 inversa nesta mesma ADR.
 
 ## Requisitos atendidos

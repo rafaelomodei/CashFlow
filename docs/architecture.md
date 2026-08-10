@@ -86,6 +86,7 @@ de RNF-001.
 ## 4. Fluxo principal — registro de lançamento
 
 ```mermaid
+%%{init: {"themeCSS": "#sequencenumber { fill: #dbeafe; stroke: #2563eb; } .sequenceNumber { fill: #111827; font-weight: 700; }"}}%%
 sequenceDiagram
     autonumber
     participant C as Cliente
@@ -99,7 +100,7 @@ sequenceDiagram
     C->>A: POST /transactions
     activate A
     A->>A: valida domínio (RN-001..004)
-    rect rgb(235, 243, 255)
+    rect rgba(59, 130, 246, 0.2)
     note over A,D: transação única e atômica
     A->>D: INSERT transaction
     A->>D: INSERT outbox_message
@@ -211,7 +212,7 @@ Regra de dependência: **as setas apontam sempre para dentro**.
 A regra é verificável por teste automatizado de arquitetura, não apenas por
 convenção. Ver [ADR-001](./decisions/ADR-001-architecture.md).
 
-## 8. Estrutura de solução pretendida
+## 8. Estrutura da solução
 
 ```
 src/
@@ -224,7 +225,8 @@ src/
 ├── Consolidation.Infrastructure/
 ├── Consolidation.Api/                API de saldo consolidado
 ├── Consolidation.Worker/             consumidor de eventos
-└── Shared.Contracts/                 contratos dos eventos de integração
+├── Shared.Contracts/                 contratos dos eventos de integração
+└── Frontend/                         tela de demonstração (React + nginx)
 tests/
 ├── *.UnitTests/                      domínio e aplicação
 ├── *.IntegrationTests/               banco, fila, endpoints
@@ -263,6 +265,7 @@ outbox_messages
 ├── type               varchar
 ├── payload            jsonb
 ├── occurred_at        timestamptz
+├── correlation_id     uuid
 ├── processed_at       timestamptz null
 ├── attempts           int
 └── error              text null
@@ -299,8 +302,9 @@ A Cash Flow API cuida do `cashflow_db`; a Consolidation API, do
 `consolidation_db`. O worker não aplica nada: dois processos migrando o mesmo
 banco ao subir juntos é corrida sem ganho.
 
-Migrar no startup é adequado a um ambiente de avaliação e inadequado a produção,
-onde o passo pertence ao deploy — registrado como melhoria futura no README. A
+Migrar no startup é adequado a um ambiente de avaliação; em um sistema real
+seria inadequado — o passo pertenceria ao deploy. Registrado como melhoria
+futura no README. A
 composição que executa isso entra na etapa 11, junto do resto do *composition
 root*.
 
@@ -342,7 +346,7 @@ Campo a campo, propriedades AMQP e política de evolução do schema:
 | Bases separadas | Isolamento real de falha (RNF-002) | Dado duplicado, sem JOIN entre contextos |
 | Saldo pré-calculado | Leitura O(1) | Escrita mais cara, risco de divergência |
 | TDD | Design testável e regressão barata | Ritmo inicial mais lento |
-| Docker Compose | Reprodutibilidade (RNF-012) | Não representa um ambiente produtivo real |
+| Docker Compose | Reprodutibilidade (RNF-012) | Não representa um ambiente real |
 
 Nenhuma dessas escolhas é gratuita, e o custo de cada uma está registrado na ADR
 correspondente.

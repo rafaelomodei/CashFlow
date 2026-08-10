@@ -6,16 +6,9 @@ namespace CashFlow.Infrastructure.Messaging;
 
 /// <summary>
 /// Dono da conexão e do canal com o broker, e o único lugar que declara a
-/// topologia.
-///
-/// A conexão é aberta **na primeira publicação**, não na inicialização. É o que
-/// permite à Cash Flow API subir e registrar lançamentos com o RabbitMQ fora do
-/// ar (RNF-001, ADR-009): tornar o broker pré-condição de startup contradiria o
-/// Outbox inteiro.
-///
-/// Pelo mesmo motivo, uma conexão perdida não é erro terminal — a próxima
-/// chamada reabre. O broker pode cair e voltar sem que ninguém reinicie nada
-/// (RNF-007).
+/// topologia. A conexão é aberta na primeira publicação, não no startup — o
+/// broker não é pré-condição para a API subir (RNF-001) — e uma conexão perdida
+/// não é erro terminal: a próxima chamada reabre (RNF-007).
 /// </summary>
 public sealed class RabbitMqConnectionProvider : IAsyncDisposable
 {
@@ -79,13 +72,9 @@ public sealed class RabbitMqConnectionProvider : IAsyncDisposable
             Password = _options.Password,
             RequestedConnectionTimeout = _options.ConnectionTimeout,
 
-            // Padrão do cliente, explícito porque dependemos dele. Medido: com um
-            // restart do broker, a recuperação automática sozinha resolve, e a
-            // verificação de canal aberto acima também resolve sozinha — desligar
-            // as duas é o que faz o teste de recuperação reprovar. A redundância é
-            // deliberada: a recuperação automática cobre a queda de rede, e
-            // reabrir do zero cobre o canal fechado por erro de protocolo, que ela
-            // não recupera.
+            // Redundância deliberada com a verificação de canal aberto acima: a
+            // recuperação automática cobre a queda de rede, e reabrir do zero
+            // cobre o canal fechado por erro de protocolo, que ela não recupera.
             AutomaticRecoveryEnabled = true,
         };
 

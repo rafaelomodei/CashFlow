@@ -3,7 +3,7 @@ import { defineConfig } from 'vitest/config';
 import react from '@vitejs/plugin-react';
 import tailwindcss from '@tailwindcss/vite';
 
-// The dev server mirrors the two paths nginx serves in production, so the browser
+// The dev server mirrors the two paths nginx serves in the container, so the browser
 // code calls the same URLs in both. Any `VITE_*_API_URL` would exist only in one
 // of the two environments and become the difference that breaks the container.
 const devProxy = {

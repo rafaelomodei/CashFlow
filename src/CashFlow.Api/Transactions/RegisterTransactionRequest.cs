@@ -5,13 +5,10 @@ using CashFlow.Domain.ValueObjects;
 namespace CashFlow.Api.Transactions;
 
 /// <summary>
-/// Corpo de `POST /transactions` (§2.1).
-///
-/// `occurredAt` chega como texto de propósito. Desserializado direto para
-/// `DateTimeOffset`, um instante sem offset — `2026-08-08T14:30:00` — seria aceito
-/// e interpretado no fuso do servidor, e o contrato manda rejeitá-lo (§1.3):
-/// adivinhar fuso em domínio financeiro coloca o lançamento no dia errado sem
-/// falhar em lugar nenhum.
+/// Corpo de `POST /transactions` (§2.1). `occurredAt` chega como texto de
+/// propósito: desserializado direto para `DateTimeOffset`, um instante sem
+/// offset seria interpretado no fuso do servidor, e o contrato manda rejeitá-lo
+/// (§1.3) — fuso adivinhado coloca o lançamento no dia errado sem falhar.
 /// </summary>
 public sealed record RegisterTransactionRequest(
     string? Type,
@@ -55,14 +52,9 @@ public sealed record RegisterTransactionRequest(
     }
 
     /// <summary>
-    /// Cada campo é validado de forma independente, e não em cascata: o contrato
-    /// devolve **todos** os campos inválidos de uma vez (§4.2), e validar em
-    /// cascata obrigaria o cliente a um ciclo de tentativa e erro por campo.
-    ///
-    /// Quem decide a regra continua sendo o domínio — o que acontece aqui é
-    /// perguntar a ele campo a campo, em vez de deixá-lo parar no primeiro erro.
-    /// Reescrever as regras aqui criaria duas verdades que divergem na primeira
-    /// mudança.
+    /// Pergunta ao domínio campo a campo em vez de deixá-lo parar no primeiro
+    /// erro: o contrato devolve todos os campos inválidos de uma vez (§4.2), e a
+    /// regra continua com um dono só.
     /// </summary>
     private static void Collect(Dictionary<string, string[]> errors, string field, Action validate)
     {

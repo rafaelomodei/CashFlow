@@ -19,8 +19,8 @@ public sealed class CashFlowDatabaseFixture : IAsyncLifetime
         await _container.StartAsync();
 
         // Migrate, e não EnsureCreated: o esquema sob teste passa a ser o mesmo
-        // que será aplicado em produção — uma migration divergente do modelo
-        // falha aqui, e não no deploy.
+        // que a aplicação aplica no startup — uma migration divergente do modelo
+        // falha aqui, e não ao subir o ambiente.
         await using var context = CreateContext();
         await context.Database.MigrateAsync();
     }

@@ -32,10 +32,10 @@ e cada item indica sua origem.
 |----|-----------|------------|--------|
 | RF-001 | Registrar um lançamento financeiro | Obrigatório | Enunciado |
 | RF-002 | Classificar o lançamento como crédito ou débito | Obrigatório | Enunciado |
-| RF-003 | Consultar os lançamentos financeiros registrados | MVP | Inferido de “gestão dos lançamentos” |
+| RF-003 | Consultar os lançamentos financeiros registrados | Essencial | Inferido de “gestão dos lançamentos” |
 | RF-004 | Calcular o saldo consolidado diário | Obrigatório | Enunciado |
 | RF-005 | Consultar o saldo consolidado de um determinado dia | Obrigatório | Enunciado |
-| RF-006 | Consultar a consolidação diária sem depender do serviço de lançamentos | MVP / Arquitetural | Derivado do requisito de independência |
+| RF-006 | Consultar a consolidação diária sem depender do serviço de lançamentos | Essencial / Arquitetural | Derivado do requisito de independência |
 
 > **Nota:** RF-006 é um requisito de fronteira — ele descreve um comportamento
 > observável pelo usuário (a consulta de saldo continua respondendo), mas sua
@@ -86,7 +86,7 @@ discriminador de tipo é suficiente e evita duplicação de regra.
 
 O enunciado não diz literalmente “listar lançamentos”, mas pede uma aplicação de
 *gestão* dos lançamentos financeiros. Para que essa gestão seja minimamente
-utilizável, a consulta faz parte do MVP.
+utilizável, a consulta faz parte do escopo.
 
 Contrato pretendido:
 
@@ -121,7 +121,7 @@ Saldo:    R$   800,00
 ```
 
 O saldo diário é o resultado do dia isolado. Saldo acumulado (running balance)
-não é exigido pelo enunciado e fica fora do MVP.
+não é exigido pelo enunciado e fica fora do escopo.
 
 ### RF-005 — Consultar consolidação
 
@@ -303,10 +303,10 @@ Registradas explicitamente para que a avaliação não confunda decisão com omi
 | # | Ambiguidade | Premissa adotada |
 |---|-------------|------------------|
 | P-01 | "50 chamadas por segundo" — leitura ou ingestão? | Tratamos ambos os cenários (ver seção 3) |
-| P-02 | Existe multi-lojista? | Não. Um único lojista implícito; sem `TenantId` no MVP |
+| P-02 | Existe multi-lojista? | Não. Um único lojista implícito; sem `TenantId` no escopo do desafio |
 | P-03 | Qual moeda? | BRL única; sem conversão cambial |
 | P-04 | Fuso horário da consolidação | O dia é determinado por `OccurredAt` em UTC; documentado como limitação conhecida |
-| P-05 | Lançamento pode ser editado/estornado? | Não no MVP. Lançamentos são imutáveis após criados |
+| P-05 | Lançamento pode ser editado/estornado? | Não neste escopo. Lançamentos são imutáveis após criados |
 | P-06 | Lançamento retroativo é permitido? | Sim — a consolidação do dia afetado é recalculada/incrementada |
 | P-07 | Consolidação é histórica ou só do dia atual? | Por data arbitrária; o dia corrente é apenas um caso particular |
 
@@ -323,4 +323,4 @@ as originou. Elas resolvem ambiguidades de contrato, não do enunciado.
 - [x] Restrições técnicas separadas dos requisitos
 - [x] Ambiguidades do enunciado registradas como premissas
 - [x] Matriz de rastreabilidade requisito → decisão
-- [x] Escopo do MVP fechado em [`scope.md`](./scope.md)
+- [x] Escopo fechado em [`scope.md`](./scope.md)

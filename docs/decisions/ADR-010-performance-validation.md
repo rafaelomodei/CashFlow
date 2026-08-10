@@ -113,7 +113,7 @@ README do projeto.
 - Mais uma ferramenta e mais um runtime no projeto.
 - Resultados dependem da máquina: números absolutos não são comparáveis entre
   ambientes — por isso o hardware é registrado junto dos resultados.
-- Medir em Docker local não equivale a medir em produção.
+- Medir em Docker local não equivale a medir em um ambiente real.
 - A interpretação (b) da ambiguidade — 50 eventos/s de ingestão — fica sem número
   medido, apenas com prova funcional de que nada se perde.
 

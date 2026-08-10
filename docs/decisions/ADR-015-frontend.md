@@ -40,7 +40,8 @@ mesma origem**. Ele não contém regra de negócio, não soma dinheiro e não é
 ### Regra de contenção do frontend
 
 Quatro restrições definem o que este frontend é. Elas valem como fronteira
-arquitetural, no mesmo nível das fronteiras de [`AGENTS.md`](../../AGENTS.md):
+arquitetural, no mesmo nível das fronteiras de
+[`CONTRIBUTING.md`](../../CONTRIBUTING.md):
 
 1. **Nenhuma regra de negócio.** Nada de cálculo de saldo, classificação, ou
    derivação de valor. A tela exibe o que a API respondeu.
@@ -57,12 +58,12 @@ Uma funcionalidade de UI que exija violar qualquer uma das quatro não entra.
 | Item | Escolha | Justificativa |
 |------|---------|---------------|
 | Biblioteca de UI | **React 19** | Requisito declarado; alinhado ao contexto da vaga |
-| Linguagem | **TypeScript** | Os DTOs do contrato viram tipos; divergência de contrato falha na compilação, não em produção |
-| Build e dev server | **Vite** | Dev server com proxy embutido — é ele que torna dev e produção idênticos do ponto de vista do browser (§"Mesma origem") |
+| Linguagem | **TypeScript** | Os DTOs do contrato viram tipos; divergência de contrato falha na compilação, não em execução |
+| Build e dev server | **Vite** | Dev server com proxy embutido — é ele que torna dev e o container idênticos do ponto de vista do browser (§"Mesma origem") |
 | Estilo | **Tailwind CSS** | Consome os design tokens como fonte única; sem CSS paralelo competindo com os tokens |
 | Estado de servidor | **TanStack Query** | Cache, `loading`/`error`, invalidação e refetch — exatamente o que a convergência do saldo exige (§"Consistência eventual visível") |
 | Testes | **Vitest + Testing Library** | Mesmo motor do Vite; teste de comportamento observável, não de implementação ([ADR-008](./ADR-008-tdd.md)) |
-| Servidor de produção | **nginx alpine** | Serve estático e encaminha `/api/*`; sem runtime Node em produção |
+| Servidor do bundle | **nginx alpine** | Serve estático e encaminha `/api/*`; sem runtime Node no container |
 
 ### Decisões deliberadas de **não** usar
 
@@ -121,13 +122,13 @@ compilado funciona em qualquer ambiente sem rebuild.
 
 Em desenvolvimento, o `server.proxy` do Vite reproduz os mesmos dois caminhos. A
 consequência é a que interessa: **o código que chama `/api/cashflow/transactions`
-é byte a byte o mesmo em `npm run dev` e em produção.** Configuração de ambiente
+é byte a byte o mesmo em `npm run dev` e no container.** Configuração de ambiente
 que só existe em um dos dois é a origem clássica do "funciona local e quebra no
 container".
 
 Consequência assumida: **nenhuma mudança no backend**. As duas APIs permanecem
 exatamente como estão — sem `AddCors`, sem lista de origens permitidas, sem uma
-configuração de segurança que precisaria ser revista antes de ir a produção.
+configuração de segurança a mais para manter e justificar.
 
 Isto é um reverse proxy, não um BFF. A distinção é operacional: o proxy não tem
 código nosso, apenas duas diretivas `proxy_pass` em `nginx.conf`. No dia em que
@@ -340,7 +341,7 @@ inesperado — é o que transforma "deu erro" em algo rastreável no log
 | **Não fazer frontend** | Mantém `scope.md` intocado; zero código novo | A consistência eventual continua invisível e passível de ser lida como defeito | Rejeitada — o custo de ser mal interpretado é maior que o de um container |
 | Next.js | Framework completo, familiar ao mercado | SSR e roteamento sem problema correspondente; *API routes* convidam ao BFF que ADR-002 recusa | Rejeitada |
 | Redux Toolkit | Estado previsível, devtools | Duplica o server state que TanStack Query já governa | Rejeitada |
-| CORS nas duas APIs | Sem container extra; setup em minutos | Endereços de serviço no bundle; configuração de dev diferente da de produção; mudança de segurança no backend | Rejeitada, mas defensável para desenvolvimento local |
+| CORS nas duas APIs | Sem container extra; setup em minutos | Endereços de serviço no bundle; configuração de dev diferente da do container; mudança de segurança no backend | Rejeitada, mas defensável para desenvolvimento local |
 | BFF (Node/Nest) agregando as duas APIs | Uma chamada só para a tela | Recria o acoplamento síncrono que ADR-002 existe para impedir, e esconde a degradação parcial que a tela deveria evidenciar | **Rejeitada por conflito arquitetural** |
 | Biblioteca de componentes pronta | Entrega mais rápida e acessível | Remove exatamente o que a tela existe para demonstrar | Rejeitada |
 | Servir o frontend por uma das duas APIs (`wwwroot`) | Um container a menos | Amarraria a tela ao ciclo de vida de um dos serviços e daria a um deles um papel que o outro não tem | Rejeitada |
@@ -355,7 +356,7 @@ inesperado — é o que transforma "deu erro" em algo rastreável no log
 - Nenhuma mudança no backend — sem CORS, sem endpoint novo, sem alteração de
   contrato. O risco de a interface quebrar o que já está verde é próximo de zero.
 - O TypeScript transforma o contrato em tipos: um campo renomeado na API quebra a
-  compilação do frontend, e não a tela em produção.
+  compilação do frontend, e não a tela em execução.
 - O bundle não conhece endereço de infraestrutura.
 
 **Negativas**

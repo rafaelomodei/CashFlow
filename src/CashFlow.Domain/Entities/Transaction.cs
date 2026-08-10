@@ -4,8 +4,8 @@ using CashFlow.Domain.ValueObjects;
 namespace CashFlow.Domain.Entities;
 
 /// <summary>
-/// Lançamento do fluxo de caixa (RF-001). Imutável após a criação: o MVP não
-/// tem edição, exclusão nem estorno (premissa P-05).
+/// Lançamento do fluxo de caixa (RF-001). Imutável após a criação: o escopo
+/// não tem edição, exclusão nem estorno (premissa P-05).
 /// </summary>
 public sealed class Transaction
 {

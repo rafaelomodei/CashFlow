@@ -60,7 +60,7 @@ Regras:
 
 - Proibido logar dado sensível ou payload inteiro sem necessidade.
 - Nível `Information` para eventos de negócio; `Warning` para retry; `Error` para
-  falha que exige atenção; `Debug` fica fora de produção.
+  falha que exige atenção; `Debug` fica restrito ao desenvolvimento.
 - Toda exceção capturada é logada com contexto suficiente para reproduzir.
 
 ### 2. Correlation ID propagado ponta a ponta
@@ -114,7 +114,7 @@ Health check e `depends_on` precisam contar a mesma história.
 |-------------|------|---------|----------|
 | `ILogger` + `AddJsonConsole` + correlation + health checks | Saída estruturada sem dependência externa; já vem no runtime | Menos recursos de *sink* que Serilog | **Escolhida** |
 | Serilog + correlation + health checks | Ecossistema de sinks maduro, enrichers prontos | Dependência externa para um ganho que este escopo não usa: um único sink, console | Rejeitada — era a escolha original, revista em 2026-08-09 |
-| Stack completa OpenTelemetry + Jaeger + Prometheus + Grafana | Observabilidade de produção real | Quatro containers a mais para um sistema de dois serviços; desvia o foco da avaliação | Rejeitada — registrada como melhoria futura |
+| Stack completa OpenTelemetry + Jaeger + Prometheus + Grafana | Observabilidade completa, de sistema real | Quatro containers a mais para um sistema de dois serviços; desvia o foco da avaliação | Rejeitada — registrada como melhoria futura |
 | `ILogger` com saída de **texto** | Zero configuração | Log não consultável; sem correlação | Rejeitada |
 | APM comercial (Datadog, New Relic) | Completo | Dependência externa; quebra a execução local autônoma | Rejeitada |
 
