@@ -48,15 +48,9 @@ lançamento, e nenhum evento é perdido — apenas atrasado.
 
 ## Estado atual
 
-Fase de **documentação e desenho arquitetural**. Nenhum código de produção foi
-escrito ainda, por decisão registrada em [`roadmap.md`](./roadmap.md).
-
-| Etapa | Status |
-|-------|--------|
-| 1 — Entendimento do desafio | ✅ Concluída |
-| 2 — Mapeamento de requisitos | ✅ Concluída |
-| 3 — Decisões arquiteturais | ✅ Concluída |
-| 4 — Contratos de API e eventos | ✅ Concluída |
-| 5 a 14 — Implementação | ⬜ Pendente |
+Sistema **implementado e validado**: os dois serviços, o worker, o outbox, o
+consumo idempotente, as APIs HTTP, o frontend de demonstração, os cenários de
+falha executados e os testes de carga medidos. O que resta é a revisão final da
+etapa 14 (README e conferência da documentação contra o entregue).
 
 Acompanhamento item a item: [`progress.md`](./progress.md).

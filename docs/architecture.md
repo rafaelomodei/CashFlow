@@ -211,7 +211,7 @@ Regra de dependência: **as setas apontam sempre para dentro**.
 A regra é verificável por teste automatizado de arquitetura, não apenas por
 convenção. Ver [ADR-001](./decisions/ADR-001-architecture.md).
 
-## 8. Estrutura de solução pretendida
+## 8. Estrutura da solução
 
 ```
 src/
@@ -224,7 +224,8 @@ src/
 ├── Consolidation.Infrastructure/
 ├── Consolidation.Api/                API de saldo consolidado
 ├── Consolidation.Worker/             consumidor de eventos
-└── Shared.Contracts/                 contratos dos eventos de integração
+├── Shared.Contracts/                 contratos dos eventos de integração
+└── Frontend/                         tela de demonstração (React + nginx)
 tests/
 ├── *.UnitTests/                      domínio e aplicação
 ├── *.IntegrationTests/               banco, fila, endpoints
@@ -263,6 +264,7 @@ outbox_messages
 ├── type               varchar
 ├── payload            jsonb
 ├── occurred_at        timestamptz
+├── correlation_id     uuid
 ├── processed_at       timestamptz null
 ├── attempts           int
 └── error              text null

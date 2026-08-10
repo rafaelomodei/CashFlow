@@ -25,7 +25,12 @@
 [✓] Etapa 12 Resiliência e observabilidade
 [✓] Etapa 13 Testes de carga
 [ ] Etapa 14 README final e revisão
+[✓] Etapa 15 Frontend de demonstração
 ```
+
+> A etapa 15 foi inserida após o fechamento do roadmap original e executada
+> **antes** da 14 — o README final descreve o sistema com a tela. A numeração
+> registra quando a decisão apareceu, não a ordem de execução.
 
 Legenda: `[✓]` concluída · `[~]` em andamento · `[ ]` pendente. O detalhamento
 item a item está em [`progress.md`](./progress.md).
@@ -143,30 +148,43 @@ demonstrável.
 - Consumidor com ack manual
 - `processed_events` e transação única
 - Upsert atômico do saldo diário
-- Retry in-process com espera limitada, e DLQ ao esgotar as tentativas
+- Retry in-process com espera limitada; o destino ao esgotar depende do tipo da
+  falha
 
 `nack` com `requeue=true` não produz backoff: a mensagem volta para a frente da
 fila e é reentregue de imediato, criando um laço quente entre falha e reentrega.
 O backoff precisa vir de um mecanismo explícito:
 
 ```
-erro transitório  →  retry controlado (com espera real entre tentativas)
+mensagem problemática              →  DLQ direta, sem retry
+(ilegível, campo ausente,             (JSON quebrado não fica válido
+ regra de domínio violada)             na segunda leitura)
+
+erro transitório  →  retry in-process (com espera real entre tentativas)
                           ↓
                   limite de tentativas atingido
                           ↓
-                         DLQ
+            infraestrutura indisponível?
+             sim: volta para a fila       não: DLQ
+             e espera o retorno
 ```
 
 Entre os três mecanismos que a [ADR-003](./decisions/ADR-003-messaging.md) deixou
-em aberto, vale o mais simples: **retry in-process com espera limitada**, seguido
-de `nack(requeue=false)` para a DLQ. Ele não exige topologia extra e prova as três
-coisas que precisam ser provadas — mensagem não some, mensagem repetida não
-duplica saldo, mensagem problemática não trava a fila. Fila de retry com TTL e
-leitura de `x-death` resolveriam o mesmo com mais peças. O motivo é registrado na
-ADR-003 quando o consumidor for implementado.
+em aberto, vale o mais simples: **retry in-process com espera limitada**. Ele não
+exige topologia extra e prova as três coisas que precisam ser provadas — mensagem
+não some, mensagem repetida não duplica saldo, mensagem problemática não trava a
+fila. Fila de retry com TTL e leitura de `x-death` resolveriam o mesmo com mais
+peças.
+
+A bifurcação ao esgotar as tentativas veio dos cenários de falha da etapa 12: a
+DLQ é para mensagem problemática, não para infraestrutura indisponível. Um banco
+fora do ar por mais tempo que a janela de retry mandaria para lá eventos
+perfeitamente válidos, e a recuperação deixaria de ser automática. O consumidor
+distingue os dois casos por `DbException.IsTransient` e devolve a mensagem à fila
+quando a falha é de conectividade.
 
 **Critério:** mesmo evento publicado N vezes altera o saldo uma única vez, e uma
-mensagem que falha sempre chega à DLQ em tempo finito, sem laço quente.
+mensagem problemática sempre chega à DLQ em tempo finito, sem laço quente.
 
 ## Etapa 11 — APIs HTTP ✓
 
@@ -211,7 +229,7 @@ extras, executados se sobrar tempo.
 
 **Critério:** clone limpo → `docker compose up -d` → sistema funcional.
 
-## Etapa 15 — Frontend de demonstração
+## Etapa 15 — Frontend de demonstração ✓
 
 Inserida após o fechamento do roadmap original, e **executada antes da etapa 14**
 — o README final precisa descrever o sistema com a tela.

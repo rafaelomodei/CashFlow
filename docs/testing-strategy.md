@@ -170,33 +170,44 @@ dotnet test --collect:"XPlat Code Coverage"        # com cobertura
 Testes de integração exigem Docker disponível (Testcontainers). Testes unitários e
 de arquitetura não exigem nada além do SDK.
 
+O frontend tem a sua própria suíte (Vitest + Testing Library — [ADR-015](./decisions/ADR-015-frontend.md)):
+
+```bash
+cd src/Frontend
+npm ci
+npm run test     # comportamento da tela: formulário, estados, convergência
+npm run build    # `tsc --noEmit` + bundle — DTO divergente do contrato quebra aqui
+```
+
 ### Integração contínua
 
 O pipeline (GitHub Actions, `.github/workflows/ci.yml`) roda em todo push e em
-todo Pull Request, a partir da etapa 5 do [roadmap](./roadmap.md):
+todo Pull Request, com três jobs:
 
 ```
-restore
-   ↓
-build  (warnings como erro)
-   ↓
-testes unitários
-   ↓
-testes de arquitetura
-   ↓
-testes de integração  (Testcontainers)
+gate rápido            restore → build (warnings como erro)
+                          → unitários → arquitetura → sem categoria
+                                ↓
+integração             Testcontainers, após o gate rápido
+
+frontend               npm ci → testes → build   (em paralelo aos jobs .NET)
 ```
 
 Decisões do pipeline:
 
 - Unitários e de arquitetura formam o **gate rápido**: falham em segundos e são o
-  primeiro sinal.
+  primeiro sinal. Ele roda também os testes **sem categoria** — um teste que
+  esqueça o `[Trait]` não cairia em nenhum filtro e seria ignorado em silêncio.
 - Integração roda como job separado. Se o custo de Testcontainers pesar demais no
   tempo de feedback, esse job pode ser restrito a Pull Requests para `master` —
   registrado aqui como decisão consciente, não como omissão.
-- `master` fica protegida: sem CI verde, sem merge. É isso que transforma "seguimos
-  TDD e qualidade" em uma propriedade do repositório, e não em uma afirmação do
-  README.
+- O job de frontend roda em paralelo aos jobs .NET: as duas pilhas não
+  compartilham nada, e encadeá-las só atrasaria o sinal de uma delas.
+- `master` fica protegida: sem CI verde, sem merge. Os checks obrigatórios são os
+  dois jobs .NET, sobre a versão mais recente da base (`strict`); o job de
+  frontend roda em todo Pull Request, mas não está na lista de checks exigidos.
+  É isso que transforma "seguimos TDD e qualidade" em uma propriedade do
+  repositório, e não em uma afirmação do README.
 
 ## 6. Critério de pronto
 
