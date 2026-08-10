@@ -749,16 +749,50 @@ Extras, apenas se sobrar tempo:
 ## Etapa 14 — README final e revisão
 
 - [ ] README com instruções de execução verificadas em clone limpo
-- [ ] README com funcionamento, decisões e trade-offs
-- [ ] README com resultados de testes e de carga
-- [ ] Melhorias futuras revisadas
+- [x] README com funcionamento, decisões e trade-offs
+- [x] README com resultados de testes e de carga
+- [x] Melhorias futuras revisadas
+- [ ] Gravar o GIF de demonstração referenciado no README (`docs/assets/demo.gif`)
 - [ ] Revisar cada ADR contra o que foi realmente implementado
-- [ ] Decisão alterada durante a implementação vira ADR nova, não edição silenciosa
-- [ ] Diagramas finais conferidos contra o código
+- [x] Decisão alterada durante a implementação vira ADR nova, não edição silenciosa
+- [x] Diagramas finais conferidos contra o código
 - [ ] Revisar [`scope.md`](./scope.md) contra o entregue
-- [ ] Decidir sobre a permanência de `AGENTS.md`, `CLAUDE.md` e `.claude/`
+- [x] Decidir sobre a permanência de `AGENTS.md`, `CLAUDE.md` e `.claude/`
 - [ ] Repositório público no GitHub
 - [ ] Validação final: clone limpo → `docker compose up -d` → sistema funcional
+
+> **Revisão geral executada nesta etapa.** A documentação que divergiu do código
+> foi corrigida contra o que está implementado:
+>
+> - `docs/README.md` dizia que nenhum código de produção existia — o "Estado
+>   atual" passou a descrever o sistema entregue.
+> - `architecture.md` §8 deixou de ser "pretendida", ganhou `src/Frontend/` na
+>   árvore, e o §9 ganhou a coluna `correlation_id` de `outbox_messages` — os
+>   quatro schemas foram conferidos coluna a coluna contra os mapeamentos EF.
+> - `roadmap.md` não listava a etapa 15 na visão geral, e a etapa 10 descrevia
+>   "esgotou → DLQ" incondicional — o código está mais correto que o texto desde
+>   a etapa 12, e a bifurcação (infraestrutura indisponível → requeue; mensagem
+>   problemática → DLQ) agora está no roadmap e em uma **Revisão datada na
+>   [ADR-003](./decisions/ADR-003-messaging.md)**, em vez de edição silenciosa.
+> - `testing-strategy.md` §5 não mencionava o job de frontend do CI. A proteção
+>   da `master` foi conferida na configuração real do GitHub: `strict`, push
+>   direto e force-push recusados, conversas resolvidas obrigatórias, e os dois
+>   jobs .NET como checks exigidos — o job de frontend roda em todo PR, mas não
+>   está na lista de checks obrigatórios, e isso agora está registrado.
+>
+> **Artefatos de processo de agentes removidos** (`AGENTS.md`, `CLAUDE.md`,
+> `.claude/`): são ferramenta de trabalho, não parte da solução. As convenções
+> técnicas — commits, branches, TDD, fronteiras arquiteturais — foram preservadas
+> em [`CONTRIBUTING.md`](../CONTRIBUTING.md), sem reescrita de histórico.
+>
+> **README reescrito como página do avaliador**: problema → solução → como rodar
+> → como provar → decisões, com um único diagrama (agora incluindo o frontend) e
+> o detalhamento delegado a `docs/`. O GIF de demonstração referenciado no topo
+> ainda precisa ser gravado.
+>
+> **Comentários podados** onde o código assumia tom de tutorial
+> (`RegisterTransactionUseCase`, `TransactionRegisteredConsumer`, entre outros):
+> fica o porquê não óbvio, sai o que a ADR já explica.
 
 ---
 
