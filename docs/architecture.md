@@ -99,7 +99,7 @@ sequenceDiagram
     C->>A: POST /transactions
     activate A
     A->>A: valida domínio (RN-001..004)
-    rect rgb(235, 243, 255)
+    rect rgba(59, 130, 246, 0.2)
     note over A,D: transação única e atômica
     A->>D: INSERT transaction
     A->>D: INSERT outbox_message
