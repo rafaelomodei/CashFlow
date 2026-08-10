@@ -3,9 +3,12 @@
 Sistema de gestão de fluxo de caixa: registro de lançamentos de crédito e débito
 e relatório de saldo diário consolidado.
 
-<!-- GIF: crédito → débito → lançamento aparece na lista → saldo converge.
-     Gravar com a tela em http://localhost:3000 e salvar em docs/assets/demo.gif -->
 ![Demonstração: lançamento registrado e saldo convergindo](./docs/assets/demo.gif)
+
+**Apresentação em vídeo (23 min):**
+[`docs/assets/apresentacao.mp4`](./docs/assets/apresentacao.mp4) — o problema, a
+arquitetura, a demonstração dos cenários de falha e as decisões que sustentam o
+requisito de independência entre os dois contextos.
 
 ## O problema
 
