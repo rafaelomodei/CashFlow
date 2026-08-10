@@ -93,7 +93,7 @@ public sealed class MessagingFixture : IAsyncLifetime
 
     /// <summary>
     /// Sobe o broker e só devolve quando ele aceita conexão. Esperar aqui não
-    /// enfraquece o teste: em produção quem espera é o backoff do publisher, que
+    /// enfraquece o teste: na aplicação quem espera é o backoff do publisher, que
     /// simplesmente tenta de novo no ciclo seguinte. O que o teste precisa medir
     /// é se o publisher se reconecta, não se ele adivinha o instante em que o
     /// broker terminou de subir.

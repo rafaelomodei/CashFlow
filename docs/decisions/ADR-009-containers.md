@@ -71,8 +71,9 @@ Decisões de configuração:
   maior: o ambiente precisa ser o mesmo hoje e daqui a seis meses (RNF-012).
 - **Dockerfiles multi-stage** (`sdk` para build, `aspnet`/`runtime` para execução),
   com usuário não-root e imagem final enxuta.
-- **Migrations aplicadas no startup** de cada serviço. Em produção isso seria
-  inadequado (deveria ser passo de deploy); aqui a prioridade é o comando único.
+- **Migrations aplicadas no startup** de cada serviço. Em um sistema real isso
+  seria inadequado (o passo pertenceria ao deploy); aqui a prioridade é o
+  comando único.
   Limitação registrada conscientemente.
 - **Variáveis de ambiente** no Compose, com `.env.example` versionado e `.env` fora
   do controle de versão.
@@ -85,10 +86,10 @@ Decisões de configuração:
 
 | Alternativa | Prós | Contras | Veredito |
 |-------------|------|---------|----------|
-| Docker Compose | Um comando, isolado, reprodutível, atende ao opcional do enunciado | Requer Docker instalado; não é ambiente produtivo real | **Escolhida** |
+| Docker Compose | Um comando, isolado, reprodutível, atende ao opcional do enunciado | Requer Docker instalado; não representa um ambiente real | **Escolhida** |
 | Instalação manual das dependências | Sem pré-requisito de Docker | Frágil, demorado, varia por máquina — inimigo direto de RNF-012 | Rejeitada |
 | .NET Aspire | Orquestração nativa, ótimo dashboard | Exige SDK e tooling específicos; menos universal para quem avalia | Rejeitada |
-| Kubernetes / Kind | Próximo de produção | Complexidade injustificável para execução local | Rejeitada |
+| Kubernetes / Kind | Próximo de um ambiente real | Complexidade injustificável para execução local | Rejeitada |
 | Devcontainer | Ambiente de desenvolvimento uniforme | Resolve o desenvolvimento, não a execução do sistema | Rejeitada (complementar, não substituto) |
 
 ## Consequências
@@ -105,8 +106,9 @@ Decisões de configuração:
 
 - Docker passa a ser pré-requisito obrigatório.
 - Consumo de recursos: seis containers, dois deles PostgreSQL.
-- Migration no startup é aceitável aqui, mas seria uma má prática em produção.
-- O Compose não representa a topologia real de um ambiente produtivo.
+- Migration no startup é aceitável aqui, mas seria uma má prática em um
+  sistema real.
+- O Compose não representa a topologia de um ambiente real.
 
 ## Trade-off aceito
 

@@ -122,7 +122,7 @@ três blocos.
 | Broker fora do ar | `POST` retorna `201` e mensagem fica pendente | RNF-001 |
 | Broker volta | Pendentes são publicadas e o saldo converge | RNF-007 |
 | Falha na publicação | Mensagem não é marcada como processada; `attempts` incrementa | ADR-004 |
-| Dois publishers simultâneos | Nenhuma mensagem publicada em duplicidade (SKIP LOCKED) | ADR-004 — só quando houver mais de uma instância; fora do MVP |
+| Dois publishers simultâneos | Nenhuma mensagem publicada em duplicidade (SKIP LOCKED) | ADR-004 — só quando houver mais de uma instância; fora do escopo |
 
 ### Integração — Consumidor
 

@@ -52,8 +52,8 @@ public static class DependencyInjection
 
     /// <summary>
     /// Aplica as migrations na inicialização, para que um clone limpo suba
-    /// funcional com um comando só. Em produção o passo pertence ao deploy —
-    /// registrado como melhoria futura no README.
+    /// funcional com um comando só. Em um sistema real o passo pertenceria ao
+    /// deploy — registrado como melhoria futura no README.
     /// </summary>
     public static async Task ApplyCashFlowMigrationsAsync(this IServiceProvider services)
     {

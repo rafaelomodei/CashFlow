@@ -9,7 +9,7 @@ import type {
 /**
  * Client for the Cash Flow bounded context.
  *
- * The base path is relative on purpose: nginx (production) and the Vite dev
+ * The base path is relative on purpose: nginx (container) and the Vite dev
  * server both expose the API under `/api/cashflow`, so no service address ever
  * reaches the bundle. This module knows nothing about the Consolidation API,
  * and never will — the two contexts stay separate here too.

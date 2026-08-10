@@ -1,10 +1,10 @@
-# Escopo do MVP
+# Escopo da solução
 
 > Este documento existe para evitar *scope creep*. Em um desafio técnico, a
 > complexidade deve estar em arquitetura, resiliência, consistência, testes,
 > qualidade de código e performance — não na quantidade de funcionalidades.
 
-## 1. Fluxo funcional do MVP
+## 1. Fluxo funcional
 
 ```
 CASH FLOW
@@ -39,8 +39,8 @@ Consultar saldo diário
 |----|-------------|---------|------------|------------|
 | UC-01 | `RegisterTransaction` | Cash Flow | Obrigatório | RF-001, RF-002 |
 | UC-02 | `GetDailyBalance` | Consolidation | Obrigatório | RF-005, RF-006 |
-| UC-03 | `ListTransactions` | Cash Flow | MVP (apoio) | RF-003 |
-| UC-06 | `GetTransaction` | Cash Flow | MVP (apoio) | RF-003 |
+| UC-03 | `ListTransactions` | Cash Flow | Apoio | RF-003 |
+| UC-06 | `GetTransaction` | Cash Flow | Apoio | RF-003 |
 | UC-04 | `ConsolidateTransaction` (worker) | Consolidation | Obrigatório | RF-004, RNF-008 |
 | UC-05 | `PublishPendingOutboxMessages` (worker) | Cash Flow | Obrigatório | RNF-007 |
 
@@ -82,7 +82,7 @@ e o repositório já precisa da operação.
 | Relatórios financeiros avançados | Fora | Apenas o saldo diário foi pedido |
 | Permissões e roles | Fora | Consequência da ausência de autenticação |
 | Notificações | Fora | Não solicitado |
-| Edição e exclusão de lançamentos | Fora | Lançamentos imutáveis no MVP (premissa P-05) |
+| Edição e exclusão de lançamentos | Fora | Lançamentos são imutáveis (premissa P-05) |
 | Estorno / lançamento compensatório | Fora | Modelável como novo lançamento de tipo oposto, se necessário |
 | Saldo acumulado (running balance) | Fora | O enunciado pede saldo **diário** |
 | Múltiplas moedas | Fora | BRL única (premissa P-03) |

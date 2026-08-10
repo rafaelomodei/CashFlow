@@ -71,9 +71,9 @@ outbox_messages
 O índice parcial mantém a varredura de pendentes barata mesmo com a tabela
 crescendo, já que a esmagadora maioria das linhas estará processada.
 
-### Escopo do publisher no MVP
+### Escopo do publisher
 
-O MVP roda **uma única instância do publisher**. Isso é deliberado: o que o
+A solução roda **uma única instância do publisher**. Isso é deliberado: o que o
 desafio pede para demonstrar é a cadeia
 
 ```

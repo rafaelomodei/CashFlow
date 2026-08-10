@@ -153,7 +153,7 @@ indisponibilidade que o requisito proíbe.
 
 ## Melhorias futuras
 
-Conscientemente fora do MVP ([`docs/scope.md`](./docs/scope.md)):
+Conscientemente fora do escopo ([`docs/scope.md`](./docs/scope.md)):
 
 - **Idempotency-Key** em `POST /transactions`, contra reenvio do cliente
 - **Fuso horário do lojista** na definição do dia da consolidação (hoje: UTC)

@@ -77,10 +77,10 @@ ON CONFLICT (date) DO UPDATE SET
 Isso elimina a corrida de *read-modify-write* entre workers concorrentes: a soma
 acontece dentro do banco, não na memória da aplicação.
 
-### Idempotência na entrada da API (fora do escopo do MVP)
+### Idempotência na entrada da API (fora do escopo do desafio)
 
 Uma chave de idempotência em `POST /transactions` (header `Idempotency-Key`)
-protegeria contra o cliente reenviar a mesma requisição. Não está no MVP: o
+protegeria contra o cliente reenviar a mesma requisição. Não está no escopo: o
 enunciado não pede, e o risco tratado aqui é o da mensageria, não o do cliente.
 Registrado como melhoria futura.
 
@@ -117,7 +117,7 @@ Aceitamos **armazenamento extra e uma escrita adicional por evento** em troca de
 correção financeira garantida. Em um domínio de dinheiro, saldo silenciosamente
 errado é a pior falha possível; o custo é irrisório frente a isso.
 
-Aceitamos também o crescimento da tabela no MVP, com expurgo por retenção
+Aceitamos também o crescimento da tabela neste escopo, com expurgo por retenção
 (ex.: 90 dias) registrado como melhoria — a janela real de reentrega é de minutos,
 muito menor que qualquer retenção razoável.
 

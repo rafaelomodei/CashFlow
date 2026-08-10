@@ -54,7 +54,7 @@ Legenda: `[x]` concluída · `[~]` em andamento · `[ ]` pendente
 - [x] Restrições auto-impostas (RT-101 a RT-104)
 - [x] Regras de negócio (RN-001 a RN-004)
 - [x] Matriz de rastreabilidade requisito → decisão
-- [x] Escopo do MVP fechado em [`scope.md`](./scope.md)
+- [x] Escopo fechado em [`scope.md`](./scope.md)
 - [x] Lista explícita do que ficou fora de escopo, com justificativa
 
 ## Etapa 3 — Decisões arquiteturais ✅
@@ -187,7 +187,7 @@ Legenda: `[x]` concluída · `[~]` em andamento · `[ ]` pendente
 
 ### Definition of Done da etapa
 
-- [x] Todos os endpoints do MVP possuem contrato completo
+- [x] Todos os endpoints do escopo possuem contrato completo
 - [x] Todos os status HTTP possíveis estão definidos
 - [x] O evento possui schema estável e versionado
 - [x] Ambiguidades de contrato foram eliminadas

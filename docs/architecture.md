@@ -301,8 +301,9 @@ A Cash Flow API cuida do `cashflow_db`; a Consolidation API, do
 `consolidation_db`. O worker não aplica nada: dois processos migrando o mesmo
 banco ao subir juntos é corrida sem ganho.
 
-Migrar no startup é adequado a um ambiente de avaliação e inadequado a produção,
-onde o passo pertence ao deploy — registrado como melhoria futura no README. A
+Migrar no startup é adequado a um ambiente de avaliação; em um sistema real
+seria inadequado — o passo pertenceria ao deploy. Registrado como melhoria
+futura no README. A
 composição que executa isso entra na etapa 11, junto do resto do *composition
 root*.
 
@@ -344,7 +345,7 @@ Campo a campo, propriedades AMQP e política de evolução do schema:
 | Bases separadas | Isolamento real de falha (RNF-002) | Dado duplicado, sem JOIN entre contextos |
 | Saldo pré-calculado | Leitura O(1) | Escrita mais cara, risco de divergência |
 | TDD | Design testável e regressão barata | Ritmo inicial mais lento |
-| Docker Compose | Reprodutibilidade (RNF-012) | Não representa um ambiente produtivo real |
+| Docker Compose | Reprodutibilidade (RNF-012) | Não representa um ambiente real |
 
 Nenhuma dessas escolhas é gratuita, e o custo de cada uma está registrado na ADR
 correspondente.
