@@ -40,7 +40,8 @@ mesma origem**. Ele não contém regra de negócio, não soma dinheiro e não é
 ### Regra de contenção do frontend
 
 Quatro restrições definem o que este frontend é. Elas valem como fronteira
-arquitetural, no mesmo nível das fronteiras de [`AGENTS.md`](../../AGENTS.md):
+arquitetural, no mesmo nível das fronteiras de
+[`CONTRIBUTING.md`](../../CONTRIBUTING.md):
 
 1. **Nenhuma regra de negócio.** Nada de cálculo de saldo, classificação, ou
    derivação de valor. A tela exibe o que a API respondeu.
