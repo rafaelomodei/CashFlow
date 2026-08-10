@@ -5,6 +5,7 @@ import { Modal } from '../../components/ui/Modal';
 import { ApiError } from '../../api/http';
 import type { CreateTransactionInput, TransactionType } from '../../api/types';
 import { todayAsCivilDate } from '../../lib/format';
+import { maskAmount } from './amountMask';
 import {
   parseAmount,
   validateTransactionDraft,
@@ -89,12 +90,15 @@ export function TransactionForm({
 
         <Input
           label="Valor"
-          inputMode="decimal"
+          inputMode="numeric"
+          autoComplete="off"
           placeholder="0,00"
           value={draft.amount}
-          onChange={(event) => setDraft((current) => ({ ...current, amount: event.target.value }))}
+          onChange={(event) =>
+            setDraft((current) => ({ ...current, amount: maskAmount(event.target.value) }))
+          }
           errors={errorsFor('amount')}
-          hint="Até duas casas decimais."
+          hint="Somente números — os dois últimos dígitos são os centavos."
         />
 
         <Input

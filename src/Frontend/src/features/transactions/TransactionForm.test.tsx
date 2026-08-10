@@ -28,22 +28,24 @@ describe('TransactionForm', () => {
     expect(screen.getByText(/maior que zero/i)).toBeInTheDocument();
   });
 
-  it('does not call the API when the amount has more than two decimals', async () => {
-    const onSubmit = vi.fn();
-    render(<TransactionForm {...defaults} onSubmit={onSubmit} />);
+  it('keeps anything that is not a digit out of the amount field', async () => {
+    render(<TransactionForm {...defaults} />);
+
+    await typeAmount('abc');
+    expect(screen.getByLabelText(/valor/i)).toHaveValue('');
 
     await typeAmount('1500,005');
-    await userEvent.click(screen.getByRole('button', { name: /salvar/i }));
-
-    expect(onSubmit).not.toHaveBeenCalled();
-    expect(screen.getByText(/duas casas decimais/i)).toBeInTheDocument();
+    // The separators typed along the way are ignored: the digits are the amount.
+    expect(screen.getByLabelText(/valor/i)).toHaveValue('15.000,05');
   });
 
   it('submits a valid draft with the amount as a number', async () => {
     const onSubmit = vi.fn();
     render(<TransactionForm {...defaults} onSubmit={onSubmit} />);
 
-    await typeAmount('1500,50');
+    await typeAmount('150050');
+    expect(screen.getByLabelText(/valor/i)).toHaveValue('1.500,50');
+
     await userEvent.click(screen.getByRole('button', { name: /salvar/i }));
 
     expect(onSubmit).toHaveBeenCalledWith(

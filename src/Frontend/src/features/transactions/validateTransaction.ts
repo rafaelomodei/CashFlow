@@ -26,13 +26,22 @@ export type FieldErrors = Record<string, string[]>;
 const MAX_AMOUNT = 9_999_999_999_999_999.99;
 const MAX_DESCRIPTION = 200;
 
-/** Accepts both `1500,50` (what a Brazilian types) and `1500.50` (what an input emits). */
+/**
+ * Masked field text → the plain notation `Number` reads: `1.500,50` → `1500.50`.
+ *
+ * The dot is the pt-BR thousands separator here and never a decimal point. That
+ * is safe because `maskAmount` is what produces the string: it is the only shape
+ * the amount field can hold.
+ */
+const normalizeAmount = (raw: string): string => raw.trim().replace(/\./g, '').replace(',', '.');
+
+/** `1.500,50` → `1500.5`. */
 export function parseAmount(raw: string): number {
-  return Number(raw.trim().replace(',', '.'));
+  return Number(normalizeAmount(raw));
 }
 
 const decimalPlaces = (raw: string): number => {
-  const normalized = raw.trim().replace(',', '.');
+  const normalized = normalizeAmount(raw);
   const dot = normalized.indexOf('.');
   return dot === -1 ? 0 : normalized.length - dot - 1;
 };

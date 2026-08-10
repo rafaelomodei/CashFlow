@@ -70,8 +70,8 @@ describe('parseAmount', () => {
     expect(parseAmount('1500,50')).toBe(1500.5);
   });
 
-  it('reads a plain dot decimal too', async () => {
+  it('reads the thousands separator of the masked field', async () => {
     const { parseAmount } = await import('./validateTransaction');
-    expect(parseAmount('1500.50')).toBe(1500.5);
+    expect(parseAmount('1.500,50')).toBe(1500.5);
   });
 });

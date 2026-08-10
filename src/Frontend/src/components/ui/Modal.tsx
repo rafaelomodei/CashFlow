@@ -11,16 +11,25 @@ export function Modal({ open, title, onClose, children }: ModalProps) {
   const titleId = useId();
   const panelRef = useRef<HTMLDivElement>(null);
 
+  // `onClose` is read through a ref so it stays out of the effect's dependencies.
+  // Callers pass an inline arrow, so its identity changes on every render of the
+  // page — and a background refetch is enough to cause one. Re-running the effect
+  // would focus the panel again and pull the caret out of the field being typed in.
+  const onCloseRef = useRef(onClose);
+  useEffect(() => {
+    onCloseRef.current = onClose;
+  });
+
   useEffect(() => {
     if (!open) return;
 
     const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') onClose();
+      if (event.key === 'Escape') onCloseRef.current();
     };
     document.addEventListener('keydown', onKeyDown);
 
     // Focus moves into the dialog so a keyboard user is not left tabbing
-    // through the page behind it.
+    // through the page behind it. Only on opening: see above.
     panelRef.current?.focus();
 
     const { overflow } = document.body.style;
@@ -30,7 +39,7 @@ export function Modal({ open, title, onClose, children }: ModalProps) {
       document.removeEventListener('keydown', onKeyDown);
       document.body.style.overflow = overflow;
     };
-  }, [open, onClose]);
+  }, [open]);
 
   if (!open) return null;
 
