@@ -3,75 +3,34 @@
 Sistema de gestão de fluxo de caixa: registro de lançamentos de crédito e débito
 e relatório de saldo diário consolidado.
 
----
+<!-- GIF: crédito → débito → lançamento aparece na lista → saldo converge.
+     Gravar com a tela em http://localhost:3000 e salvar em docs/assets/demo.gif -->
+![Demonstração: lançamento registrado e saldo convergindo](./docs/assets/demo.gif)
 
-## Status
+## O problema
 
-**Etapa atual: 14 — README final e revisão**
-
-```
-✅ Requisitos          etapas 1–2
-✅ Arquitetura         etapas 3, 5
-✅ Contratos           etapa 4
-✅ Implementação       domínio, casos de uso e persistência (etapas 6–8)
-✅ Mensageria          outbox, publicação e consumo idempotente (etapas 9–10)
-✅ Endpoints HTTP      as duas APIs, com OpenAPI (etapa 11)
-✅ Resiliência         cenários de falha executados e health checks (etapa 12)
-✅ Carga               50 req/s medidos, perda zero (etapa 13)
-```
-
-257 testes automatizados verdes, incluindo o fluxo completo
-`POST /transactions` → RabbitMQ → worker → `GET /daily-balances/{date}`. As seções marcadas com ⏳ são
-preenchidas conforme as etapas avançam.
-
-| Visão | Documento |
-|-------|-----------|
-| Estratégica — as 14 etapas e por que nesta ordem | [`docs/roadmap.md`](./docs/roadmap.md) |
-| Execução — checklist detalhado e próximo item | [`docs/progress.md`](./docs/progress.md) |
-
----
-
-## Sobre o projeto
-
-Um lojista precisa gerenciar o fluxo de caixa do dia a dia, registrando créditos e
-débitos, e demanda um relatório com o saldo consolidado diariamente.
-
-O desafio impõe um requisito não funcional que define toda a arquitetura:
+Um lojista precisa registrar créditos e débitos e consultar o saldo consolidado
+do dia. O desafio impõe um requisito não funcional que define toda a arquitetura:
 
 > A aplicação de gestão de lançamentos precisa continuar operante **mesmo em caso
 > de falha no sistema de consolidação diária**.
 
-Enunciado completo: [`docs/challenge/`](./docs/challenge/desafio-desenvolvedor-software.pdf)
+Enunciado completo: [`docs/challenge/`](./docs/challenge/desafio-desenvolvedor-software.pdf).
+Requisitos mapeados: [`docs/requirements.md`](./docs/requirements.md).
 
-## Requisitos
+## A solução
 
-| Categoria | Documento |
-|-----------|-----------|
-| Funcionais, não funcionais, restrições, premissas | [`docs/requirements.md`](./docs/requirements.md) |
-| Escopo do MVP e o que ficou de fora | [`docs/scope.md`](./docs/scope.md) |
-
-Resumo dos requisitos funcionais:
-
-| ID | Requisito |
-|----|-----------|
-| RF-001 | Registrar um lançamento financeiro |
-| RF-002 | Classificar o lançamento como crédito ou débito |
-| RF-003 | Consultar os lançamentos registrados |
-| RF-004 | Calcular o saldo consolidado diário |
-| RF-005 | Consultar o saldo consolidado de um determinado dia |
-| RF-006 | Consultar a consolidação sem depender do serviço de lançamentos |
-
-## Arquitetura
-
-Dois contextos independentes, comunicando-se **apenas** por eventos assíncronos.
-Nenhuma chamada HTTP síncrona entre eles, nenhum banco compartilhado.
-
-Detalhamento completo: [`docs/architecture.md`](./docs/architecture.md)
-
-## Diagrama
+Dois contextos independentes que **não se comunicam por HTTP** e não compartilham
+banco. O serviço de lançamentos grava o evento em uma tabela de **outbox na mesma
+transação** do lançamento; um publisher assíncrono o envia ao RabbitMQ; um worker
+o aplica de forma **idempotente** ao saldo do dia. A consolidação inteira pode
+estar fora do ar sem impedir um único lançamento — e nenhum evento é perdido,
+apenas atrasado.
 
 ```mermaid
 graph TD
+    B["Browser"] --> FE["Frontend<br/>React + nginx"]
+
     subgraph CashFlowCtx["Contexto: Lançamentos"]
         API1["Cash Flow API"]
         DB1[("cashflow_db<br/>transactions + outbox")]
@@ -90,43 +49,21 @@ graph TD
         API2 -->|lê saldo| DB2
     end
 
+    FE -->|"/api/cashflow/*"| API1
+    FE -->|"/api/consolidation/*"| API2
     PUB -->|publica| MQ
     MQ -->|consome| WK
 ```
 
-## Tecnologias
-
-| Camada | Tecnologia | Decisão |
-|--------|-----------|---------|
-| Linguagem / runtime | C# / .NET 10 (LTS) | [ADR-012](./docs/decisions/ADR-012-tech-stack.md) |
-| API | ASP.NET Core (controllers) | [ADR-012](./docs/decisions/ADR-012-tech-stack.md) |
-| Persistência | PostgreSQL + EF Core | [ADR-005](./docs/decisions/ADR-005-database.md) |
-| Mensageria | RabbitMQ | [ADR-003](./docs/decisions/ADR-003-messaging.md) |
-| Testes | xUnit, FluentAssertions, NSubstitute, Testcontainers | [ADR-008](./docs/decisions/ADR-008-tdd.md) |
-| Carga | k6 | [ADR-010](./docs/decisions/ADR-010-performance-validation.md) |
-| Logs | `ILogger` + JSON console | [ADR-011](./docs/decisions/ADR-011-observability.md) |
-| Ambiente | Docker + Docker Compose | [ADR-009](./docs/decisions/ADR-009-containers.md) |
-| Frontend | React 19, TypeScript, Vite, Tailwind CSS, TanStack Query | [ADR-015](./docs/decisions/ADR-015-frontend.md) |
-| Testes de frontend | Vitest + Testing Library | [ADR-015](./docs/decisions/ADR-015-frontend.md) |
-| CI | GitHub Actions | [`testing-strategy.md`](./docs/testing-strategy.md#integração-contínua) |
-
-## Estrutura do projeto
-
-```
-docs/                  documentação, ADRs e enunciado
-.github/workflows/     pipeline de CI
-src/                   código-fonte (inclui `src/Frontend/`)
-tests/                 testes automatizados
-k6/                    testes de carga
-docker-compose.yml     ambiente local
-```
-
-Estrutura de projetos: [`docs/architecture.md`](./docs/architecture.md) §8.
+Stack: **.NET 10 / ASP.NET Core**, **PostgreSQL + EF Core**, **RabbitMQ**,
+**React 19 + TypeScript** servido por nginx, tudo em **Docker Compose**.
+Diagramas C4, fluxos e comportamento sob falha:
+[`docs/architecture.md`](./docs/architecture.md).
 
 ## Como executar
 
-**Pré-requisitos:** Docker e Docker Compose. O SDK do .NET 10 é necessário apenas
-para rodar os testes fora do container.
+**Pré-requisito:** Docker e Docker Compose. As migrations são aplicadas na
+inicialização — um clone limpo sobe funcional com:
 
 ```bash
 cp .env.example .env
@@ -136,282 +73,98 @@ docker compose up -d
 | Serviço | Endereço |
 |---------|----------|
 | **Interface** | **http://localhost:3000** |
-| Cash Flow API | http://localhost:5001 |
-| Consolidation API | http://localhost:5002 |
+| Cash Flow API (Swagger em `/swagger`) | http://localhost:5001 |
+| Consolidation API (Swagger em `/swagger`) | http://localhost:5002 |
 | RabbitMQ (management) | http://localhost:15672 |
-| `cashflow_db` | `localhost:5432` |
-| `consolidation_db` | `localhost:5433` |
 
-Para reiniciar do zero: `docker compose down -v && docker compose up -d`.
+Contrato completo das APIs — DTOs, validações, erros (RFC 7807) e o schema do
+evento: [`docs/api-contracts.md`](./docs/api-contracts.md).
 
-O ambiente completo ocioso consome cerca de 240 MiB somando os sete containers.
+| Método | Rota | Serviço |
+|--------|------|---------|
+| `POST` | `/transactions` | Cash Flow — `201` mesmo com o RabbitMQ fora do ar |
+| `GET` | `/transactions` | Cash Flow — paginação por cursor e filtro por período |
+| `GET` | `/transactions/{id}` | Cash Flow |
+| `GET` | `/daily-balances/{date}` | Consolidation — saldo consolidado do dia |
 
-As duas APIs expõem Swagger UI em `/swagger` e a especificação OpenAPI em
-`/openapi/v1.json` fora de produção. As migrations são aplicadas na inicialização,
-então um clone limpo sobe funcional com um comando só.
+## Como provar
 
-### Testes
-
-```bash
-dotnet test                                   # suíte completa
-dotnet test --filter Category=Unit            # unitários, sem Docker
-dotnet test --filter Category=Architecture    # fronteiras de camada
-dotnet test --filter Category=Integration     # exige Docker
-```
+**Testes — 257 automatizados, CI verde obrigatória para merge:**
 
 ```bash
-cd src/Frontend
-npm ci
-npm run test                                  # Vitest + Testing Library
-npm run build                                 # `tsc --noEmit` + bundle
+dotnet test                        # unitários + arquitetura + integração (Docker)
+cd src/Frontend && npm ci && npm run test
 ```
-
-## API
-
-Contrato completo — DTOs, validações, códigos de erro e schema do evento:
-[`docs/api-contracts.md`](./docs/api-contracts.md).
-
-| Método | Rota | Serviço | O que faz |
-|--------|------|---------|-----------|
-| `POST` | `/transactions` | Cash Flow | Registra um lançamento — `201` mesmo com o RabbitMQ fora do ar |
-| `GET` | `/transactions` | Cash Flow | Lista com paginação por cursor e filtro por período |
-| `GET` | `/transactions/{id}` | Cash Flow | Consulta um lançamento |
-| `GET` | `/daily-balances/{date}` | Consolidation | Saldo consolidado do dia |
-
-A URL base de cada serviço vem da tabela de portas acima.
-
-```bash
-curl -X POST "$CASHFLOW_API/transactions" \
-  -H 'Content-Type: application/json' \
-  -d '{"type":"CREDIT","amount":1500.00,"occurredAt":"2026-08-08T14:30:00Z"}'
-```
-
-```json
-{
-  "date": "2026-08-08",
-  "totalCredits": 1500.00,
-  "totalDebits": 700.00,
-  "balance": 800.00,
-  "updatedAt": "2026-08-08T14:32:15Z"
-}
-```
-
-Erros seguem [Problem Details (RFC 7807)](https://www.rfc-editor.org/rfc/rfc7807),
-sempre com o `correlationId` que permite rastrear a requisição pelos quatro
-processos do fluxo.
-
-A especificação OpenAPI é gerada do código e conferida contra este contrato por
-teste de integração — divergência entre os dois é defeito, não evolução.
-
-## Decisões arquiteturais
-
-15 ADRs documentam contexto, alternativas avaliadas, consequências e trade-offs de
-cada escolha: [`docs/decisions/`](./docs/decisions/README.md).
-
-As principais:
-
-- [ADR-001](./docs/decisions/ADR-001-architecture.md) — Clean Architecture com SOLID
-- [ADR-002](./docs/decisions/ADR-002-service-decomposition.md) — Dois serviços independentes
-- [ADR-004](./docs/decisions/ADR-004-transactional-outbox.md) — Transactional Outbox
-- [ADR-007](./docs/decisions/ADR-007-idempotency.md) — Idempotência no consumidor
-- [ADR-015](./docs/decisions/ADR-015-frontend.md) — Frontend de demonstração
-
-## Interface
-
-Uma tela, em `http://localhost:3000`, consumindo os endpoints que já existem
-([ADR-015](./docs/decisions/ADR-015-frontend.md)). Ela **não implementa requisito
-algum** — existe porque as duas propriedades mais importantes do sistema são
-também as duas mais fáceis de confundir com defeito quando só existem como JSON:
-
-| O que a tela mostra | O que isso demonstra |
-|---------------------|----------------------|
-| O saldo converge sozinho segundos após o lançamento, com "atualizado há N s" ao lado | Consistência eventual ([ADR-006](./docs/decisions/ADR-006-consistency.md)) é arquitetura, não bug |
-| Com a Consolidation API parada, o card de saldo mostra erro e o formulário continua registrando | Degradação parcial (RNF-001) |
-| Dia sem movimentação exibe `R$ 0,00`, e período sem lançamentos exibe estado vazio | Ausência é resultado, nunca `404` |
-| `400` de validação aparece campo a campo; `500` mostra o `correlationId` | Problem Details e rastreabilidade ([ADR-011](./docs/decisions/ADR-011-observability.md)) |
-
-### Regra de contenção
-
-A tela é uma vitrine, e quatro restrições a mantêm assim:
-
-1. **Nenhuma regra de negócio.** Ela exibe o que a API respondeu.
-2. **Nunca soma dinheiro.** Os três totais vêm prontos de
-   `GET /daily-balances/{date}`. `number` em JavaScript é ponto flutuante binário
-   — somar `amount` no cliente produziria centavos divergentes do `numeric(18,2)`
-   do backend, e o número errado seria o que o usuário vê.
-3. **Nenhum endpoint novo, nenhuma mudança de contrato.** Não há filtro por tipo
-   porque a API não oferece: filtrá-lo no cliente sobre uma lista paginada por
-   cursor mostraria "apenas créditos" das páginas já carregadas, e um filtro que
-   mente é pior que um filtro ausente.
-4. **Nenhuma camada de servidor própria.** O nginx encaminha; não transforma,
-   não agrega e não decide.
-
-### Mesma origem, em vez de CORS
-
-```
-browser :3000
-   ├── /api/cashflow/*        → cashflow-api:8080
-   └── /api/consolidation/*   → consolidation-api:8080
-```
-
-O browser nunca aprende o endereço de nenhum serviço: não há `VITE_*_API_URL` no
-bundle e **nenhuma das duas APIs precisou de CORS**. O `server.proxy` do Vite
-reproduz os mesmos caminhos em desenvolvimento, então o código que chama
-`/api/cashflow/transactions` é idêntico em `npm run dev` e em produção.
-
-Isto é um reverse proxy, não um BFF: `nginx.conf` tem duas diretivas
-`proxy_pass` e nenhuma linha de lógica. Agregar as duas APIs em uma resposta só
-recriaria o acoplamento síncrono que [ADR-002](./docs/decisions/ADR-002-service-decomposition.md)
-existe para impedir.
-
-### Design system
-
-Interface **inspirada na identidade visual pública da Verity** — não uma cópia do
-Design System deles, que não é público. Os tokens foram extraídos por inspeção de
-`verity.com.br`: azul `#0041FF`, navy `#1A1086`, tipografia **Poppins** e botões
-totalmente arredondados. Vivem em `src/Frontend/src/styles/globals.css` e o
-Tailwind os consome como fonte única.
-
-As cores semânticas (crédito / débito) são **derivação nossa**, declaradas como
-tal no arquivo de tokens: o site da Verity não publica paleta semântica. Todos os
-pares texto/fundo atingem contraste AA.
-
-### Verificações
-
-```bash
-# Nenhum endereço de serviço no bundle
-grep -r "5001\|5002" src/Frontend/dist/     # sem resultado
-
-# Nenhuma API precisou de CORS
-grep -rn "AddCors" --include="*.cs" src      # sem resultado
-```
-
-## Consistência dos dados
-
-O sistema opera com **consistência eventual** entre lançamentos e saldo: um
-lançamento recém-registrado leva alguns segundos para refletir no saldo consolidado.
-Isso é consequência direta da independência exigida pelo enunciado, e não um
-defeito. Detalhes e garantias: [ADR-006](./docs/decisions/ADR-006-consistency.md).
-
-## Resiliência
-
-| Componente fora do ar | `POST /transactions` | `GET /daily-balances` |
-|-----------------------|----------------------|------------------------|
-| Consolidation API | ✅ funciona | ❌ indisponível |
-| Consolidation Worker | ✅ funciona | ⚠️ dados defasados |
-| `consolidation_db` | ✅ funciona | ❌ indisponível |
-| RabbitMQ | ✅ funciona | ⚠️ dados defasados |
-
-Nenhuma falha do lado da consolidação impede o registro de lançamentos, e nenhum
-evento é perdido — apenas atrasado. Os quatro cenários foram **executados** com
-`docker compose`, e os resultados estão em
-[`architecture.md`](./docs/architecture.md) §6.
-
-Health checks em `/health/live` e `/health/ready` nas duas APIs. O `ready` da Cash
-Flow API não considera o RabbitMQ de propósito: marcá-la como não-pronta com o
-broker fora faria um orquestrador retirá-la de serviço, produzindo justamente a
-indisponibilidade que RNF-001 pede para evitar.
-
-## Testes
-
-TDD como fluxo de desenvolvimento, não como etapa posterior:
-[`docs/testing-strategy.md`](./docs/testing-strategy.md) e
-[ADR-008](./docs/decisions/ADR-008-tdd.md).
-
-O pipeline de CI roda `restore → build → unitários → arquitetura → integração` em
-todo Pull Request, e `master` só aceita merge com o pipeline verde. A garantia de
-qualidade é uma propriedade do repositório, não uma promessa desta seção.
-
-Estado atual da suíte:
 
 | Categoria | Testes | O que cobre |
 |-----------|--------|-------------|
 | Unitários | 143 | Domínio (RN-001 a RN-004) e casos de uso com dublês |
 | Arquitetura | 20 | Fronteiras entre camadas e entre os dois contextos |
 | Integração | 92 | Banco, broker e endpoints reais, via Testcontainers |
-| Ponta a ponta | 2 | O sistema inteiro, os dois contextos juntos |
+| Ponta a ponta | 2 | `POST /transactions` → RabbitMQ → worker → saldo |
 
-## Performance
+**Resiliência — os quatro cenários foram executados, não apenas descritos:**
 
-Requisito do enunciado: 50 chamadas/s com perda máxima de 5%.
+| Componente derrubado | `POST /transactions` | Recuperação ao voltar |
+|----------------------|----------------------|------------------------|
+| Consolidation API | `201` | automática |
+| Consolidation Worker | `201` | consome o backlog da fila |
+| `consolidation_db` | `201` | mensagem volta à fila e reprocessa |
+| RabbitMQ | `201` | outbox retém e republica |
 
-### A ambiguidade, e a interpretação adotada
+Em todos, o saldo final igualou a soma do que foi registrado. Resultados
+detalhados: [`docs/architecture.md`](./docs/architecture.md) §6. A própria tela
+demonstra os dois comportamentos centrais: o saldo converge sozinho com
+"atualizado há N s" ao lado (consistência eventual), e com a consolidação parada
+o card exibe erro enquanto o formulário continua registrando (degradação
+parcial).
 
-O enunciado diz que *"o sistema de consolidação chega a processar 50 chamadas por
-segundo"*. "Chamadas" pode significar leitura do saldo consolidado ou eventos de
-lançamento a serem consolidados. Em vez de cobrir as duas leituras com medições
-rasas, adotamos a **leitura do saldo** como interpretação principal — é sobre o
-sistema de consolidação que a frase fala — e medimos a outra como extra.
+**Carga — requisito de 50 chamadas/s com perda máxima de 5%:**
 
-### Resultados medidos
+| Cenário (k6) | Carga | Erro | p95 |
+|--------------|-------|------|-----|
+| Leitura do saldo (obrigatório) | 50,0 req/s por 30 s | 0,00% | 2,27 ms |
+| Escrita de lançamentos (extra) | 50,0 req/s por 30 s | 0,00% | 4,42 ms |
 
-| Cenário | Carga | Erro | p95 | Resultado |
-|---------|-------|------|-----|-----------|
-| **Leitura do saldo** (obrigatório) | 1 500 req em 50,0 req/s por 30s | 0,00% | 2,27 ms | ✅ |
-| Escrita de lançamentos (extra) | 1 501 req em 50,0 req/s por 30s | 0,00% | 4,42 ms | ✅ |
-
-**Perda de eventos: zero.** Os 1 501 lançamentos registrados sob carga apareceram
-inteiros no saldo consolidado (`1501.00`), com o outbox e a DLQ vazios ao final.
-Isso não é medido por threshold de k6 — é conferido comparando o total registrado
-com o saldo após a convergência.
-
-Thresholds declarados no próprio script, de modo que o teste falhe sozinho quando
-o requisito não for atendido: erro < 1%, p95 < 100 ms na leitura, checks > 99%.
-Os 5% do enunciado são o teto tolerado, não a meta.
-
-### Condições da medição
-
-| Item | Valor |
-|------|-------|
-| CPU | Intel Core i7-7700HQ @ 2.80 GHz, 8 núcleos |
-| Memória | 15 GiB |
-| Ambiente | Docker Compose, tudo na mesma máquina |
-
-Os números são relativos a este ambiente: banco, broker, aplicação e o próprio k6
-competem pela mesma CPU. A afirmação que o projeto sustenta não é "este sistema
-suporta 50 req/s em qualquer infraestrutura", e sim "o requisito foi medido, nestas
-condições, com este resultado".
-
-Como reproduzir: [`k6/README.md`](./k6/README.md). Critérios:
+**Perda de eventos: zero** — os 1 501 lançamentos registrados sob carga
+apareceram inteiros no saldo, com outbox e DLQ vazios. Medição local (i7-7700HQ,
+tudo na mesma máquina); condições, thresholds e interpretação da ambiguidade do
+enunciado: [`k6/README.md`](./k6/README.md) e
 [ADR-010](./docs/decisions/ADR-010-performance-validation.md).
 
-## Observabilidade
+## Decisões que importam
 
-Logs estruturados em JSON, correlation id propagado entre os quatro processos do
-fluxo e health checks `live`/`ready`:
-[ADR-011](./docs/decisions/ADR-011-observability.md).
+15 ADRs registram contexto, alternativas e trade-offs:
+[`docs/decisions/`](./docs/decisions/README.md). As cinco que definem o sistema:
 
-## Trade-offs
+| Decisão | Por quê | Custo aceito |
+|---------|---------|--------------|
+| [Dois serviços independentes](./docs/decisions/ADR-002-service-decomposition.md) | Falha na consolidação não pode parar lançamentos | Mais infraestrutura |
+| [Transactional Outbox](./docs/decisions/ADR-004-transactional-outbox.md) | Lançamento e evento na mesma transação — zero perda | Latência extra, publisher próprio |
+| [Idempotência no consumidor](./docs/decisions/ADR-007-idempotency.md) | Entrega *at-least-once* não pode duplicar saldo | Tabela `processed_events` |
+| [Consistência eventual](./docs/decisions/ADR-006-consistency.md) | Consequência direta da independência exigida | Saldo defasado por segundos, exposto via `updatedAt` |
+| [Frontend de demonstração](./docs/decisions/ADR-015-frontend.md) | Tornar visível o que em JSON parece defeito | Uma tela, sem regra de negócio nem soma no cliente |
 
-| Escolha | Ganho | Custo aceito |
-|---------|-------|--------------|
-| Dois serviços em vez de um | Independência de falha | Mais infraestrutura e complexidade operacional |
-| Mensageria assíncrona | Absorve pico, desacopla | Consistência eventual, debugging distribuído |
-| Outbox | Zero perda de evento | Latência extra, tabela e worker adicionais |
-| Bases separadas | Isolamento real de falha | Dado duplicado, sem JOIN entre contextos |
-| Saldo pré-calculado | Leitura O(1) | Escrita mais cara, risco de divergência |
-| TDD | Design testável, regressão barata | Ritmo inicial mais lento |
-| Outbox e retry implementados à mão | Mecanismos visíveis e auditáveis | Mais código que usar MassTransit |
-
-Cada custo está detalhado na ADR correspondente. Nenhuma peça da arquitetura existe
-sem um requisito que a justifique — a
-[matriz de rastreabilidade](./docs/requirements.md#5-matriz-de-rastreabilidade--requisito--decisão)
-liga cada decisão ao requisito que a originou.
+TDD como fluxo ([ADR-008](./docs/decisions/ADR-008-tdd.md)), logs estruturados
+com `correlationId` ponta a ponta ([ADR-011](./docs/decisions/ADR-011-observability.md))
+e health checks `live`/`ready` — o `ready` da Cash Flow API ignora o RabbitMQ de
+propósito: marcá-la não-pronta com o broker fora produziria justamente a
+indisponibilidade que o requisito proíbe.
 
 ## Melhorias futuras
 
-Itens conscientemente fora do MVP ([`docs/scope.md`](./docs/scope.md)):
+Conscientemente fora do MVP ([`docs/scope.md`](./docs/scope.md)):
 
-- **Idempotency-Key** em `POST /transactions`, protegendo contra reenvio do cliente
+- **Idempotency-Key** em `POST /transactions`, contra reenvio do cliente
 - **Fuso horário do lojista** na definição do dia da consolidação (hoje: UTC)
-- **Reconciliação periódica** entre lançamentos e saldo, detectando divergência
-- **Expurgo** de `outbox_messages` e `processed_events` por política de retenção
-- **OpenTelemetry + Jaeger + Prometheus** para tracing e métricas
-- **Rotina de reprocessamento da DLQ** sem intervenção manual
-- **Saldo acumulado** e consulta por período
-- **Multi-tenant**, para atender múltiplos lojistas
-- **`SELECT ... FOR UPDATE SKIP LOCKED`** no outbox, para múltiplas instâncias do
-  publisher — otimização de vazão, não condição de correção ([ADR-004](./docs/decisions/ADR-004-transactional-outbox.md))
-- **Migrations como passo de deploy**, em vez de no startup da aplicação
-- **CD e análise estática** no pipeline — a CI de build e testes entra já na
-  etapa 5
+- **Reconciliação periódica** entre lançamentos e saldo
+- **Expurgo** de `outbox_messages` e `processed_events` por retenção
+- **OpenTelemetry** para tracing e métricas
+- **Reprocessamento automático da DLQ**
+- **`SELECT ... FOR UPDATE SKIP LOCKED`** no outbox, para múltiplos publishers
+- **Migrations como passo de deploy**, em vez de no startup
+
+## Documentação
+
+O detalhamento — requisitos, escopo, arquitetura, contratos, estratégia de testes
+e a ordem de construção — está em [`docs/`](./docs/README.md).
