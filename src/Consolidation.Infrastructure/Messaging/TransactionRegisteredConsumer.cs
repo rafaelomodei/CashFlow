@@ -15,10 +15,7 @@ namespace Consolidation.Infrastructure.Messaging;
 
 /// <summary>
 /// Consome <c>TransactionRegistered</c> e aplica o lançamento ao saldo do dia
-/// (RF-004, ADR-003, ADR-007).
-///
-/// O `ack` é manual e só acontece **depois** do commit no banco: reconhecer antes
-/// tiraria a mensagem da fila sem o efeito persistido, e ela não voltaria.
+/// (RF-004, ADR-003, ADR-007). O `ack` é manual e só acontece depois do commit.
 /// </summary>
 public sealed class TransactionRegisteredConsumer : BackgroundService
 {
@@ -84,9 +81,7 @@ public sealed class TransactionRegisteredConsumer : BackgroundService
     {
         var correlationId = delivery.BasicProperties.CorrelationId;
 
-        // O correlationId em escopo alcança todo log deste consumo, inclusive os
-        // que não passam por aqui — é o que liga esta linha à requisição HTTP que
-        // originou o lançamento, quatro processos atrás (ADR-011).
+        // Liga cada log deste consumo à requisição HTTP de origem (ADR-011).
         using var scope = _logger.BeginScope(new Dictionary<string, object?>
         {
             ["CorrelationId"] = correlationId,
@@ -120,9 +115,7 @@ public sealed class TransactionRegisteredConsumer : BackgroundService
             }
             catch (DomainException exception)
             {
-                // Violação de regra não melhora com o tempo: um valor não positivo
-                // continuará não positivo na décima tentativa. Vai direto para a
-                // DLQ, como a mensagem ilegível.
+                // Erro permanente: DLQ direta, sem retry (ADR-003).
                 _logger.LogError(exception, "Event violates a domain rule; sending to the dead-letter queue");
                 await channel.BasicNackAsync(delivery.DeliveryTag, multiple: false, requeue: false, stoppingToken);
 
@@ -137,13 +130,9 @@ public sealed class TransactionRegisteredConsumer : BackgroundService
                 {
                     if (IsInfrastructureOutage(exception))
                     {
-                        // A DLQ é para mensagem problemática, não para
-                        // indisponibilidade de infraestrutura. Um banco fora do ar
-                        // por mais tempo que a janela de retry mandaria para lá
-                        // eventos perfeitamente válidos, e a recuperação deixaria
-                        // de ser automática — contrariando a promessa de perda
-                        // zero (RNF-004, RNF-007). Devolvida à fila, a mensagem
-                        // espera o banco voltar.
+                        // A DLQ é para mensagem problemática, não para infraestrutura
+                        // indisponível: devolvida à fila, a mensagem espera o banco
+                        // voltar (ADR-003 §Revisão).
                         _logger.LogWarning(
                             exception, "Infrastructure is unavailable; returning the message to the queue");
                         await channel.BasicNackAsync(
@@ -155,9 +144,8 @@ public sealed class TransactionRegisteredConsumer : BackgroundService
                     break;
                 }
 
-                // Espera real entre tentativas. `nack` com `requeue=true` devolveria
-                // a mensagem à frente da fila e ela voltaria de imediato — o laço
-                // quente que a ADR-003 registra como o erro comum aqui.
+                // Espera real entre tentativas — requeue imediato criaria o laço
+                // quente que a ADR-003 registra.
                 await Task.Delay(_options.RetryDelay, stoppingToken);
             }
         }
@@ -167,11 +155,8 @@ public sealed class TransactionRegisteredConsumer : BackgroundService
     }
 
     /// <summary>
-    /// Distingue "esta mensagem é ruim" de "o mundo em volta está fora do ar".
-    ///
-    /// `DbException.IsTransient` é o próprio provedor dizendo que a falha é de
-    /// conectividade e não da instrução — é a informação que separa um evento
-    /// que nunca vai funcionar de um que vai funcionar assim que o banco voltar.
+    /// `DbException.IsTransient` separa a falha de conectividade — que se resolve
+    /// sozinha — da mensagem que nunca vai funcionar.
     /// </summary>
     private static bool IsInfrastructureOutage(Exception exception)
     {
@@ -186,10 +171,7 @@ public sealed class TransactionRegisteredConsumer : BackgroundService
         return false;
     }
 
-    /// <summary>
-    /// Mensagem ilegível ou incompleta é erro permanente, e por isso é separada
-    /// do retry: o envelope não fica válido na segunda leitura.
-    /// </summary>
+    /// <summary>Envelope ilegível ou incompleto é erro permanente — sem retry.</summary>
     private static bool TryRead(
         BasicDeliverEventArgs delivery,
         out TransactionRegisteredEvent? integrationEvent,
